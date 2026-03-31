@@ -1,0 +1,27 @@
+@import '@fontsource/open-sans/400.css';
+@import '@fontsource/open-sans/500.css';
+@import '@fontsource/open-sans/600.css';
+@import '@fontsource/open-sans/700.css';
+
+:root {
+  --v-font-family: 'Open Sans', sans-serif;
+}
+
+html,
+body,
+#app,
+.v-application {
+  font-family: 'Open Sans', sans-serif;
+}
+
+/* Keep typography consistent across Vuetify and semantic tags. */
+.v-application,
+.v-application * {
+  font-family: 'Open Sans', sans-serif;
+}
+
+/* Preserve icon font rendering. */
+.mdi,
+.mdi::before {
+  font-family: 'Material Design Icons' !important;
+}

@@ -1,0 +1,31 @@
+{
+  "name": "package-configuration-manager",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview",
+    "sync:feature-flags": "node scripts/sync-feature-flags-from-sheet.mjs",
+    "sync:feature-flags:from-csv": "node scripts/sync-feature-flags-from-sheet.mjs --from-local-csv",
+    "sync:descriptions": "node scripts/sync-feature-descriptions.mjs"
+  },
+  "dependencies": {
+    "@fontsource/open-sans": "^5.2.7",
+    "@mdi/font": "^7.4.0",
+    "axios": "^1.7.0",
+    "pinia": "^2.2.0",
+    "vue": "^3.5.0",
+    "vue-router": "^4.4.0",
+    "vuetify": "^3.7.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.0",
+    "puppeteer": "^24.39.0",
+    "sass": "^1.80.0",
+    "typescript": "^5.6.0",
+    "vite": "^6.1.0",
+    "vue-tsc": "^2.2.0"
+  }
+}
