@@ -13,349 +13,812 @@
 
     <div class="mb-4">
       <p class="text-body-2 text-medium-emphasis">
-        Select two packages to see what's different between them.
+        Select packages to compare side by side. Differences are highlighted.
       </p>
     </div>
 
-    <!-- Package selectors -->
+    <!-- Package selector -->
     <v-card variant="flat" class="border rounded-lg mb-6">
       <v-card-text>
-        <v-row>
-          <v-col cols="12" md="5">
-            <v-autocomplete
-              v-model="leftId"
-              :items="packageOptions"
-              item-title="label"
-              item-value="value"
-              label="Package A"
-              variant="outlined"
-              density="compact"
-              hide-details
-              prepend-inner-icon="mdi-package-variant"
-            />
-          </v-col>
-          <v-col cols="12" md="2" class="d-flex align-center justify-center">
-            <v-btn icon="mdi-swap-horizontal" variant="tonal" size="small" @click="swapPackages" />
-          </v-col>
-          <v-col cols="12" md="5">
-            <v-autocomplete
-              v-model="rightId"
-              :items="packageOptions"
-              item-title="label"
-              item-value="value"
-              label="Package B"
-              variant="outlined"
-              density="compact"
-              hide-details
-              prepend-inner-icon="mdi-package-variant"
-            />
-          </v-col>
-        </v-row>
+        <v-autocomplete
+          v-model="selectedIds"
+          :items="packageOptions"
+          :search="searchText"
+          item-title="label"
+          item-value="value"
+          :custom-filter="filterPackageOption"
+          label="Search by display name or name"
+          variant="outlined"
+          density="compact"
+          hide-details
+          multiple
+          chips
+          closable-chips
+          prepend-inner-icon="mdi-package-variant"
+          @update:search="searchText = $event"
+          @update:model-value="onSelectionChange"
+        />
       </v-card-text>
     </v-card>
 
-    <!-- Diff results -->
-    <template v-if="leftPkg && rightPkg">
-      <!-- Summary -->
-      <v-row class="mb-4">
-        <v-col cols="12" md="4">
-          <v-card variant="flat" class="border rounded-lg">
-            <v-card-text class="text-center">
-              <div class="text-h4 font-weight-bold text-error">{{ diff.onlyInA.length }}</div>
-              <div class="text-caption text-medium-emphasis">Only in {{ leftPkg.display_name }}</div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col cols="12" md="4">
-          <v-card variant="flat" class="border rounded-lg">
-            <v-card-text class="text-center">
-              <div class="text-h4 font-weight-bold text-success">{{ diff.common.length }}</div>
-              <div class="text-caption text-medium-emphasis">Shared Features</div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col cols="12" md="4">
-          <v-card variant="flat" class="border rounded-lg">
-            <v-card-text class="text-center">
-              <div class="text-h4 font-weight-bold text-info">{{ diff.onlyInB.length }}</div>
-              <div class="text-caption text-medium-emphasis">Only in {{ rightPkg.display_name }}</div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
-
-      <!-- Quotas comparison -->
+    <template v-if="selectedPackages.length >= 2">
+      <!-- Settings -->
       <v-card variant="flat" class="border rounded-lg mb-4">
-        <v-card-title class="text-subtitle-1">
-          <v-icon class="mr-2" size="small">mdi-counter</v-icon>
-          Quota Comparison
+        <v-card-title
+          class="text-subtitle-1 font-weight-bold d-flex align-center section-title"
+          @click="collapsed.settings = !collapsed.settings"
+        >
+          <v-icon class="mr-2" size="small">mdi-cog-outline</v-icon>
+          Settings
+          <v-spacer />
+          <v-icon size="small">{{ collapsed.settings ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </v-card-title>
-        <v-table density="compact">
-          <thead>
-            <tr>
-              <th>Quota</th>
-              <th class="text-center">{{ leftPkg.display_name }}</th>
-              <th class="text-center">{{ rightPkg.display_name }}</th>
-              <th class="text-center">Diff</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="q in quotaRows" :key="q.key" :class="q.different ? 'bg-amber-lighten-5' : ''">
-              <td class="font-weight-medium">{{ q.label }}</td>
-              <td class="text-center">{{ formatQuotaVal(q.leftVal, q.key) }}</td>
-              <td class="text-center">{{ formatQuotaVal(q.rightVal, q.key) }}</td>
-              <td class="text-center">
-                <v-chip v-if="q.different" size="x-small" :color="q.diffColor" variant="tonal">
-                  {{ q.diffText }}
-                </v-chip>
-                <span v-else class="text-caption text-medium-emphasis">—</span>
-              </td>
-            </tr>
-          </tbody>
-        </v-table>
+        <div v-show="!collapsed.settings" class="comparison-table-wrapper">
+          <v-table density="compact" class="comparison-table" :style="tableWidthStyle">
+            <colgroup>
+              <col class="label-col" />
+              <col v-for="pkg in selectedPackages" :key="pkg.id" :style="pkgColStyle" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="sticky-col"></th>
+                <th v-for="pkg in selectedPackages" :key="pkg.id" class="text-center pkg-col">
+                  {{ pkg.display_name }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in settingsRows" :key="row.key" :class="{ 'bg-amber-lighten-5': row.different }">
+                <td class="sticky-col font-weight-medium">{{ row.label }}</td>
+                <td v-for="pkg in selectedPackages" :key="pkg.id" class="text-center">
+                  <v-icon
+                    size="small"
+                    :color="row.values[pkg.id] ? 'success' : 'grey-lighten-1'"
+                    :icon="row.values[pkg.id] ? 'mdi-check-circle' : 'mdi-close-circle'"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </v-table>
+        </div>
       </v-card>
 
-      <!-- Feature diff by domain -->
+      <!-- Bundles -->
       <v-card variant="flat" class="border rounded-lg mb-4">
-        <v-card-title class="text-subtitle-1">
-          <v-icon class="mr-2" size="small">mdi-format-list-checks</v-icon>
-          Feature Differences by Domain
+        <v-card-title
+          class="text-subtitle-1 font-weight-bold d-flex align-center section-title"
+          @click="collapsed.bundles = !collapsed.bundles"
+        >
+          <v-icon class="mr-2" size="small">mdi-package-variant-closed</v-icon>
+          Bundles
+          <v-spacer />
+          <v-icon size="small">{{ collapsed.bundles ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </v-card-title>
-        <v-card-text>
-          <div v-for="domainDiff in diff.byDomain" :key="domainDiff.domain.id" class="mb-4">
-            <div class="d-flex align-center mb-2">
+        <div v-show="!collapsed.bundles" class="comparison-table-wrapper">
+          <v-table density="compact" class="comparison-table" :style="tableWidthStyle">
+            <colgroup>
+              <col class="label-col" />
+              <col v-for="pkg in selectedPackages" :key="pkg.id" :style="pkgColStyle" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="sticky-col"></th>
+                <th v-for="pkg in selectedPackages" :key="pkg.id" class="text-center pkg-col">
+                  {{ pkg.display_name }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in bundleRows" :key="row.key" :class="{ 'bg-amber-lighten-5': row.different }">
+                <td class="sticky-col font-weight-medium">{{ row.label }}</td>
+                <td v-for="pkg in selectedPackages" :key="pkg.id" class="text-center">
+                  {{ row.values[pkg.id] }}
+                </td>
+              </tr>
+            </tbody>
+          </v-table>
+        </div>
+      </v-card>
+
+      <!-- Quotas -->
+      <v-card variant="flat" class="border rounded-lg mb-4">
+        <v-card-title
+          class="text-subtitle-1 font-weight-bold d-flex align-center section-title"
+          @click="collapsed.quotas = !collapsed.quotas"
+        >
+          <v-icon class="mr-2" size="small">mdi-counter</v-icon>
+          Quotas
+          <v-spacer />
+          <v-icon size="small">{{ collapsed.quotas ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
+        </v-card-title>
+        <div v-show="!collapsed.quotas" class="comparison-table-wrapper">
+          <v-table density="compact" class="comparison-table" :style="tableWidthStyle">
+            <colgroup>
+              <col class="label-col" />
+              <col v-for="pkg in selectedPackages" :key="pkg.id" :style="pkgColStyle" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="sticky-col"></th>
+                <th v-for="pkg in selectedPackages" :key="pkg.id" class="text-center pkg-col">
+                  {{ pkg.display_name }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="q in quotaRows" :key="q.key" :class="{ 'bg-amber-lighten-5': q.different }">
+                <td class="sticky-col font-weight-medium">{{ q.label }}</td>
+                <td v-for="pkg in selectedPackages" :key="pkg.id" class="text-center">
+                  {{ q.values[pkg.id] }}
+                </td>
+              </tr>
+            </tbody>
+          </v-table>
+        </div>
+      </v-card>
+
+      <!-- Feature Comparison by Domain -->
+      <v-card variant="flat" class="border rounded-lg mb-4">
+        <v-card-title
+          class="text-subtitle-1 font-weight-bold d-flex align-center section-title"
+          @click="collapsed.features = !collapsed.features"
+        >
+          <v-icon class="mr-2" size="small">mdi-format-list-checks</v-icon>
+          Feature Comparison by Domain
+          <v-spacer />
+          <div class="d-flex align-center" style="gap: 8px;">
+            <v-switch
+              v-model="showFFs"
+              label="Show FFs"
+              density="compact"
+              hide-details
+              class="ff-toggle"
+              @click.stop
+            />
+            <v-icon size="small">{{ collapsed.features ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
+          </div>
+        </v-card-title>
+        <v-card-text v-show="!collapsed.features" class="pa-0">
+          <div v-for="domainDiff in comparisonDomains" :key="domainDiff.domain.id" class="mb-2">
+            <div class="d-flex align-center pa-4 pb-2">
               <v-avatar :color="domainDiff.domain.color" variant="tonal" size="28" class="mr-2">
                 <v-icon size="x-small">{{ domainDiff.domain.icon }}</v-icon>
               </v-avatar>
               <span class="text-subtitle-2 font-weight-bold">{{ domainDiff.domain.name }}</span>
             </div>
 
-            <v-table density="compact">
-              <thead>
-                <tr>
-                  <th>Feature</th>
-                  <th class="text-center" style="width: 120px;">{{ leftPkg.display_name }}</th>
-                  <th class="text-center" style="width: 120px;">{{ rightPkg.display_name }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="row in domainDiff.features"
-                  :key="row.name"
-                  :class="{
-                    'bg-red-lighten-5': row.status === 'only-a',
-                    'bg-blue-lighten-5': row.status === 'only-b',
-                  }"
-                >
-                  <td>
-                    <span class="font-weight-medium">{{ row.businessName }}</span>
-                    <span class="text-caption text-medium-emphasis ml-2">({{ row.name }})</span>
-                  </td>
-                  <td class="text-center">
-                    <v-icon v-if="row.inA" color="success" size="small">mdi-check-circle</v-icon>
-                    <v-icon v-else color="grey-lighten-2" size="small">mdi-close-circle-outline</v-icon>
-                  </td>
-                  <td class="text-center">
-                    <v-icon v-if="row.inB" color="success" size="small">mdi-check-circle</v-icon>
-                    <v-icon v-else color="grey-lighten-2" size="small">mdi-close-circle-outline</v-icon>
-                  </td>
-                </tr>
-              </tbody>
-            </v-table>
+            <div class="comparison-table-wrapper">
+              <v-table density="compact" class="comparison-table" :style="tableWidthStyle">
+                <colgroup>
+                  <col class="label-col" />
+                  <col v-for="pkg in selectedPackages" :key="pkg.id" :style="pkgColStyle" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th class="sticky-col">Feature</th>
+                    <th v-for="pkg in selectedPackages" :key="pkg.id" class="text-center pkg-col">
+                      {{ pkg.display_name }}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="row in domainDiff.features"
+                    :key="row.featureKey"
+                    :class="{ 'bg-amber-lighten-5': row.different }"
+                  >
+                    <td class="sticky-col">
+                      <span class="font-weight-medium">{{ row.name }}</span>
+                    </td>
+                    <td v-for="pkg in selectedPackages" :key="pkg.id" class="text-center">
+                      <div class="d-flex flex-column align-center">
+                        <div class="d-flex align-center justify-center" style="gap: 4px;">
+                          <template v-if="row.perPackage[pkg.id]">
+                            <v-chip
+                              v-if="row.perPackage[pkg.id].stateLabel"
+                              size="x-small"
+                              :color="row.perPackage[pkg.id].stateColor || 'info'"
+                              variant="flat"
+                            >{{ row.perPackage[pkg.id].stateLabel }}</v-chip>
+                            <template v-else>
+                              <v-icon
+                                v-if="row.perPackage[pkg.id].denyIcon"
+                                color="warning" size="small"
+                              >mdi-eye-off</v-icon>
+                              <v-icon v-else color="success" size="small">mdi-check-circle</v-icon>
+                            </template>
+                          </template>
+                          <v-icon v-else color="grey-lighten-2" size="small">mdi-close-circle-outline</v-icon>
+                        </div>
+                        <div v-if="showFFs && row.perPackage[pkg.id]?.flags?.length" class="ff-names mt-1">
+                          <code v-for="ff in row.perPackage[pkg.id].flags" :key="ff" class="ff-code">{{ ff }}</code>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </v-table>
+            </div>
           </div>
         </v-card-text>
       </v-card>
-
-      <!-- General info -->
-      <v-card variant="flat" class="border rounded-lg">
-        <v-card-title class="text-subtitle-1">
-          <v-icon class="mr-2" size="small">mdi-information-outline</v-icon>
-          General Information
-        </v-card-title>
-        <v-table density="compact">
-          <thead>
-            <tr>
-              <th>Property</th>
-              <th class="text-center">{{ leftPkg.display_name }}</th>
-              <th class="text-center">{{ rightPkg.display_name }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr :class="leftPkg.staff_slots !== rightPkg.staff_slots ? 'bg-amber-lighten-5' : ''">
-              <td class="font-weight-medium">Staff Slots</td>
-              <td class="text-center">{{ leftPkg.staff_slots }}</td>
-              <td class="text-center">{{ rightPkg.staff_slots }}</td>
-            </tr>
-            <tr>
-              <td class="font-weight-medium">Total Features</td>
-              <td class="text-center">{{ leftPkg.features.length }}</td>
-              <td class="text-center">{{ rightPkg.features.length }}</td>
-            </tr>
-            <tr>
-              <td class="font-weight-medium">Last Updated</td>
-              <td class="text-center">{{ formatDate(leftPkg.updated_at) }}</td>
-              <td class="text-center">{{ formatDate(rightPkg.updated_at) }}</td>
-            </tr>
-          </tbody>
-        </v-table>
-      </v-card>
     </template>
 
-    <!-- Empty state -->
+    <!-- Empty / insufficient state -->
     <v-card
       v-else
       variant="flat"
       class="border rounded-lg pa-12 text-center"
     >
       <v-icon size="80" color="grey-lighten-1">mdi-compare-horizontal</v-icon>
-      <h3 class="text-h6 mt-4 mb-2">Select two packages to compare</h3>
+      <h3 class="text-h6 mt-4 mb-2">
+        {{ selectedPackages.length === 1 ? 'Select at least one more package' : 'Select packages to compare' }}
+      </h3>
       <p class="text-body-2 text-medium-emphasis">
-        Choose a package in each dropdown above to see a detailed diff.
+        Choose two or more packages above to see a detailed side-by-side comparison.
       </p>
     </v-card>
   </v-container>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { usePackageStore } from '@/stores/packages'
 import { useFeatureStore } from '@/stores/features'
-import { getFeatureByName } from '@/data/featureCatalog'
-import type { Package, Domain } from '@/types'
+import { domainFeatureFFMappingRaw } from '@/data/domainFeatureFFMapping'
+import type { Package } from '@/types'
 
 const route = useRoute()
+const router = useRouter()
 const packageStore = usePackageStore()
 const featureStore = useFeatureStore()
 const loadError = ref('')
 
-const leftId = ref<string | null>(null)
-const rightId = ref<string | null>(null)
+const collapsed = reactive({ settings: false, bundles: false, quotas: false, features: false })
+const showFFs = ref(localStorage.getItem('pkg_compare_showFFs') === 'true')
+watch(showFFs, (val) => localStorage.setItem('pkg_compare_showFFs', String(val)))
+
+const selectedIds = ref<string[]>([])
+const searchText = ref('')
 
 const packageOptions = computed(() =>
-  packageStore.packages.map((p) => ({ label: p.display_name, value: p.id })),
+  packageStore.packages.map((p) => ({
+    label: `${p.display_name} (${p.name})`,
+    value: p.id,
+    name: p.name,
+    displayName: p.display_name,
+  })),
 )
 
-const leftPkg = computed(() => (leftId.value ? packageStore.getPackageById(leftId.value) : undefined))
-const rightPkg = computed(() => (rightId.value ? packageStore.getPackageById(rightId.value) : undefined))
-
-watch(() => route.query, (q) => {
-  if (q.a) leftId.value = q.a as string
-  if (q.b) rightId.value = q.b as string
-}, { immediate: true })
-
-interface DomainDiffRow {
-  name: string
-  businessName: string
-  inA: boolean
-  inB: boolean
-  status: 'both' | 'only-a' | 'only-b'
+function filterPackageOption(_value: string, query: string, item?: { raw?: { name?: string; displayName?: string } }) {
+  if (!query) return true
+  const q = query.toLowerCase()
+  const name = (item?.raw?.name ?? '').toLowerCase()
+  const displayName = (item?.raw?.displayName ?? '').toLowerCase()
+  return displayName.includes(q) || name.includes(q)
 }
 
-interface DomainDiff {
-  domain: Domain
-  features: DomainDiffRow[]
-}
-
-const diff = computed(() => {
-  if (!leftPkg.value || !rightPkg.value) {
-    return { onlyInA: [], onlyInB: [], common: [], byDomain: [] as DomainDiff[] }
+function onSelectionChange(ids: string[]) {
+  selectedIds.value = ids
+  if (!searchText.value) return
+  const q = searchText.value.toLowerCase()
+  const selectedSet = new Set(ids)
+  const remainingMatches = packageOptions.value.filter(
+    (opt) =>
+      !selectedSet.has(opt.value) &&
+      (opt.displayName.toLowerCase().includes(q) || opt.name.toLowerCase().includes(q)),
+  )
+  if (remainingMatches.length === 0) {
+    searchText.value = ''
   }
+}
 
-  const setA = new Set(leftPkg.value.features)
-  const setB = new Set(rightPkg.value.features)
-  const allFeatures = new Set([...setA, ...setB])
+const selectedPackages = computed<Package[]>(() =>
+  selectedIds.value
+    .map((id) => packageStore.getPackageById(id))
+    .filter((p): p is Package => !!p),
+)
 
-  const onlyInA = [...allFeatures].filter((f) => setA.has(f) && !setB.has(f))
-  const onlyInB = [...allFeatures].filter((f) => !setA.has(f) && setB.has(f))
-  const common = [...allFeatures].filter((f) => setA.has(f) && setB.has(f))
+watch(
+  () => route.query,
+  (q) => {
+    if (q.ids) {
+      selectedIds.value = (q.ids as string).split(',').filter(Boolean)
+    } else if (q.a) {
+      const ids = [q.a as string]
+      if (q.b) ids.push(q.b as string)
+      selectedIds.value = ids
+    }
+  },
+  { immediate: true },
+)
 
-  const byDomain: DomainDiff[] = featureStore.allDomains
-    .map((domain) => {
-      const features = domain.features
-        .filter((f) => allFeatures.has(f.name))
-        .map((f) => ({
-          name: f.name,
-          businessName: f.business_name,
-          inA: setA.has(f.name),
-          inB: setB.has(f.name),
-          status: (setA.has(f.name) && setB.has(f.name)
-            ? 'both'
-            : setA.has(f.name)
-              ? 'only-a'
-              : 'only-b') as 'both' | 'only-a' | 'only-b',
-        }))
-      return { domain, features }
-    })
-    .filter((d) => d.features.length > 0)
-
-  return { onlyInA, onlyInB, common, byDomain }
+watch(selectedIds, (ids) => {
+  if (ids.length > 0) {
+    router.replace({ query: { ids: ids.join(',') } })
+  }
 })
 
-interface QuotaRow {
+// --- Settings comparison (matching view page) ---
+interface SettingsRow {
   key: string
   label: string
-  leftVal: number | null
-  rightVal: number | null
+  values: Record<string, boolean>
   different: boolean
-  diffText: string
-  diffColor: string
 }
 
-const quotaRows = computed<QuotaRow[]>(() => {
-  if (!leftPkg.value || !rightPkg.value) return []
-  const labels: Record<string, string> = {
-    invoice_monthly_quota: 'Monthly Invoices',
-    campaign_recipients_monthly_quota: 'Campaign Recipients',
-    estimate_monthly_quota: 'Monthly Estimates',
-    clients_credit: 'Client Limit',
-    campaigns_credit: 'Campaign Credits',
-    booking_credit: 'Booking Credits',
-    sms_monthly_quota_us_canada: 'SMS (US/Canada)',
-    sms_monthly_quota_other: 'SMS (International)',
-    storage_quota: 'Storage',
-  }
-  return Object.entries(labels).map(([key, label]) => {
-    const leftVal = (leftPkg.value!.quotas as any)[key]
-    const rightVal = (rightPkg.value!.quotas as any)[key]
-    const different = leftVal !== rightVal
-    let diffText = ''
-    let diffColor = 'grey'
-    if (different) {
-      if (leftVal === null && rightVal !== null) { diffText = 'A: ∞'; diffColor = 'info' }
-      else if (leftVal !== null && rightVal === null) { diffText = 'B: ∞'; diffColor = 'info' }
-      else if (leftVal !== null && rightVal !== null) {
-        const delta = rightVal - leftVal
-        diffText = delta > 0 ? `B +${delta}` : `B ${delta}`
-        diffColor = delta > 0 ? 'success' : 'error'
-      }
+const settingsRows = computed<SettingsRow[]>(() => {
+  if (selectedPackages.value.length < 2) return []
+  const defs: { key: string; label: string; valueFn: (pkg: Package) => boolean }[] = [
+    { key: 'disable_add_staff_button', label: 'Additional Staff require upgrade', valueFn: (pkg) => pkg.settings.disable_add_staff_button },
+    { key: 'disable_sms_purchase_button', label: 'Additional SMS require upgrade', valueFn: (pkg) => pkg.settings.disable_sms_purchase_button },
+    { key: 'free', label: 'Free package', valueFn: (pkg) => pkg.free },
+  ]
+  return defs.map(({ key, label, valueFn }) => {
+    const values: Record<string, boolean> = {}
+    for (const pkg of selectedPackages.value) {
+      values[pkg.id] = valueFn(pkg)
     }
-    return { key, label, leftVal, rightVal, different, diffText, diffColor }
+    const vals = Object.values(values)
+    return { key, label, values, different: vals.some((v) => v !== vals[0]) }
   })
 })
 
-function swapPackages() {
-  const tmp = leftId.value
-  leftId.value = rightId.value
-  rightId.value = tmp
+// --- Bundles comparison (matching view page) ---
+interface ComparisonRow {
+  key: string
+  label: string
+  values: Record<string, string>
+  different: boolean
 }
 
-function formatQuotaVal(val: number | null, key?: string) {
-  if (val === null) return 'Unlimited'
-  if (key === 'storage_quota') return formatStorage(val)
-  return val.toLocaleString()
+function fmt(v: number | null | undefined): string {
+  if (v === null || v === undefined) return '--'
+  if (Number.isNaN(Number(v))) return '--'
+  return Number(v).toLocaleString()
 }
 
-function formatStorage(bytes: number): string {
-  if (bytes === 0) return '0'
-  if (bytes >= 1073741824) return `${+(bytes / 1073741824).toFixed(1)} GB`
-  if (bytes >= 1048576) return `${+(bytes / 1048576).toFixed(0)} MB`
-  return `${bytes} bytes`
+function formatStorage(bytes: number | null | undefined): string {
+  if (bytes == null || Number.isNaN(Number(bytes))) return '--'
+  const b = Number(bytes)
+  if (b === 0) return '0'
+  if (b >= 1073741824) return `${+(b / 1073741824).toFixed(1)} GB`
+  if (b >= 1048576) return `${+(b / 1048576).toFixed(0)} MB`
+  return `${b} bytes`
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+function pkgFeatureSet(pkg: Package) {
+  return new Set(pkg.features.map((f) => normFlag(f)))
 }
+
+const bundleRows = computed<ComparisonRow[]>(() => {
+  if (selectedPackages.value.length < 2) return []
+  const defs: { key: string; label: string; valueFn: (pkg: Package, fs: Set<string>) => string }[] = [
+    { key: 'staff_seats', label: 'Staff Seats', valueFn: (pkg, fs) => fs.has('unlimited_seats') ? 'Unlimited' : (pkg.staff_slots?.toLocaleString?.() ?? '--') },
+    { key: 'sms_us', label: 'SMS (US, Canada, IL)', valueFn: (pkg) => pkg.quotas.sms_monthly_quota_us_canada == null ? '--' : Number(pkg.quotas.sms_monthly_quota_us_canada).toLocaleString() },
+    { key: 'sms_other', label: 'SMS (other)', valueFn: (pkg) => pkg.quotas.sms_monthly_quota_other == null ? '--' : Number(pkg.quotas.sms_monthly_quota_other).toLocaleString() },
+  ]
+  return defs.map(({ key, label, valueFn }) => {
+    const values: Record<string, string> = {}
+    for (const pkg of selectedPackages.value) {
+      values[pkg.id] = valueFn(pkg, pkgFeatureSet(pkg))
+    }
+    const vals = Object.values(values)
+    return { key, label, values, different: vals.some((v) => v !== vals[0]) }
+  })
+})
+
+// --- Quota comparison (matching view page) ---
+const quotaRows = computed<ComparisonRow[]>(() => {
+  if (selectedPackages.value.length < 2) return []
+  const defs: { key: string; label: string; valueFn: (pkg: Package, fs: Set<string>) => string }[] = [
+    { key: 'clients_credit', label: 'Client Limit', valueFn: (pkg, fs) => fs.has('unlimited_clients') ? 'Unlimited' : fmt(pkg.quotas.clients_credit) },
+    { key: 'booking_credit', label: 'Booking Credits', valueFn: (pkg) => fmt(pkg.quotas.booking_credit) },
+    { key: 'storage_quota', label: 'Storage', valueFn: (pkg) => formatStorage(pkg.quotas.storage_quota) },
+    { key: 'invoice_monthly_quota', label: 'Monthly Invoices', valueFn: (pkg, fs) => fs.has('invoices_monthly_unlimited') ? 'Unlimited' : fmt(pkg.quotas.invoice_monthly_quota) },
+    { key: 'estimate_monthly_quota', label: 'Monthly Estimates', valueFn: (pkg, fs) => fs.has('estimates_monthly_unlimited') ? 'Unlimited' : fmt(pkg.quotas.estimate_monthly_quota) },
+    { key: 'campaign_recipients', label: 'Campaign Recipients', valueFn: (pkg, fs) => fs.has('campaign_recipients_monthly_unlimited') ? 'Unlimited' : fmt(pkg.quotas.campaign_recipients_monthly_quota) },
+    { key: 'campaigns_credit', label: 'Campaign Credits', valueFn: (pkg) => fmt(pkg.quotas.campaigns_credit) },
+  ]
+  return defs.map(({ key, label, valueFn }) => {
+    const values: Record<string, string> = {}
+    for (const pkg of selectedPackages.value) {
+      values[pkg.id] = valueFn(pkg, pkgFeatureSet(pkg))
+    }
+    const vals = Object.values(values)
+    return { key, label, values, different: vals.some((v) => v !== vals[0]) }
+  })
+})
+
+// --- Feature comparison by domain (rich grouping, matching detail page) ---
+
+function normFlag(value: string) {
+  return (value || '').trim().toLowerCase()
+}
+
+const hiddenQuotaControlFlags = new Set([
+  'unlimited_clients',
+  'invoices_monthly_unlimited',
+  'estimates_monthly_unlimited',
+  'campaign_recipients_monthly_unlimited',
+])
+
+const invertedFlagFeatures: Record<string, { ff: string; domain: string; disabledName: string; disabledPositive?: boolean }> = {
+  'SMS Campaigns': { ff: 'hide_sms_channel_from_marketing', domain: 'Communication', disabledName: 'Hide SMS Campaigns' },
+  'Pendo': { ff: 'pkg.bus.pendo.deny', domain: 'Business Administration', disabledName: 'No Pendo' },
+  'Block Links in Messages': { ff: 'allow_to_send_link', domain: 'Trial \\ Spam prevention', disabledName: 'Links in Messages Allowed', disabledPositive: true },
+}
+
+const cbDropdownFeatures: Record<string, { baseFlag?: string; domain?: string; defaultState?: { label: string; color: string }; options: { label: string; flags: string[]; color: string; hideTag?: boolean; denyIcon?: boolean; denyName?: string }[] }> = {
+  'Email Templates Customization': {
+    baseFlag: 'pkg.business_administration.email_templates',
+    options: [
+      { label: 'Upsell mode', flags: [], color: '#fab4cd' },
+      { label: 'Client emails only', flags: ['cliche_client_features'], color: '#ffd250' },
+      { label: 'Client & Business emails', flags: ['cliche_all_features'], color: '#a7eebe' },
+    ],
+  },
+  'Documents \\ Storage': {
+    options: [
+      { label: 'Upsell mode', flags: ['pkg.documents.promote'], color: '#fab4cd' },
+      { label: 'Available', flags: ['documents_enabled'], color: '#a7eebe', hideTag: true },
+    ],
+  },
+  'Reviews': {
+    options: [
+      { label: 'Upsell mode', flags: ['collect_reviews'], color: '#fab4cd' },
+      { label: 'Available', flags: ['enable_reviews_auto_publishing'], color: '#a7eebe', hideTag: true },
+    ],
+  },
+  'Payment Module': {
+    options: [
+      { label: 'Upsell mode', flags: ['pkg.payments.promote'], color: '#fab4cd' },
+      { label: 'Available', flags: ['payments_module'], color: '#a7eebe', hideTag: true },
+    ],
+  },
+  'SMS Module': {
+    baseFlag: 'sms_enabled',
+    options: [
+      { label: 'Available', flags: [], color: '#a7eebe', hideTag: true },
+      { label: 'Deduct only marketing from quota', flags: ['purchase_sms_credits'], color: '#ffd250' },
+      { label: 'Deduct all SMS from quota', flags: ['sms_deduct_all_chargeables'], color: '#a7eebe' },
+    ],
+  },
+  'Marketing Module': {
+    options: [
+      { label: 'Upsell mode', flags: ['pkg.marketing.promote'], color: '#fab4cd' },
+      { label: 'Available', flags: ['marketing_module'], color: '#a7eebe', hideTag: true },
+    ],
+  },
+  'Onboarding wizard': {
+    defaultState: { label: 'Full onboarding', color: '#a7eebe' },
+    domain: 'Business Administration',
+    options: [
+      { label: 'Full onboarding', flags: [], color: '#a7eebe', hideTag: true },
+      { label: 'Slim onboarding', flags: ['pkg.business_administration.slim_registration_wizard'], color: '#ffd250' },
+      { label: 'No onboarding', flags: ['pkg.business_administration.registration_wizard.deny'], color: '#fab4cd', denyIcon: true, hideTag: true, denyName: 'No Onboarding wizard' },
+    ],
+  },
+  'Getting Started wizard': {
+    defaultState: { label: '', color: '#a7eebe' },
+    domain: 'Business Administration',
+    options: [
+      { label: 'Getting Started', flags: [], color: '#a7eebe', hideTag: true },
+      { label: 'Thryv - Setup wizard (instead of Getting Started)', flags: ['setup_wizard_menu_item'], color: '#a7eebe', hideTag: true, denyName: 'Thryv - Setup wizard (instead of Getting Started)' },
+      { label: 'No Getting Started', flags: ['pkg.business_administration.getting_started.deny'], color: '#fab4cd', denyIcon: true, hideTag: true, denyName: 'No Getting Started wizard' },
+    ],
+  },
+  'Reports': {
+    options: [
+      { label: 'Upsell mode', flags: ['reports'], color: '#fab4cd' },
+      { label: 'Available', flags: ['reports', 'detailed_reports'], color: '#a7eebe', hideTag: true },
+    ],
+  },
+  'Automated Campaigns': {
+    options: [
+      { label: 'Activate only', flags: ['activate_automatic_campaigns'], color: '#ffd250' },
+      { label: 'Activate + Create/Delete', flags: ['activate_automatic_campaigns', 'create_delete_automatic_campaigns'], color: '#a7eebe', hideTag: true },
+    ],
+  },
+  'Event Attendees': {
+    domain: 'Scheduling',
+    defaultState: { label: '5 Attendees', color: '#ffd250' },
+    options: [
+      { label: '5 Attendees', flags: [], color: '#ffd250' },
+      { label: 'Unlimited Attendees', flags: ['event_attendees_limit_increased'], color: '#a7eebe' },
+    ],
+  },
+  'Services': {
+    domain: 'Scheduling',
+    defaultState: { label: '5 Services limit', color: '#ffd250' },
+    options: [
+      { label: '1 Service limit', flags: ['single_service_booking'], color: '#ffd250' },
+      { label: '3 Services limit', flags: ['3_services_limitation'], color: '#ffd250' },
+      { label: '5 Services limit', flags: [], color: '#ffd250' },
+      { label: '150 Services limit', flags: ['unlimited_services', 'remove_service_limit'], color: '#ffd250' },
+      { label: 'Unlimited Services', flags: ['unlimited_services'], color: '#a7eebe' },
+    ],
+  },
+}
+
+// Build FF lookup from mapping
+const ffLookup = new Map<string, { domainName: string; featureName: string }>()
+const domainOrder = new Map<string, number>()
+const featureOrderByDomain = new Map<string, Map<string, number>>()
+let dIdx = 0
+for (const [domainName, byFeature] of Object.entries(domainFeatureFFMappingRaw)) {
+  domainOrder.set(normFlag(domainName), dIdx++)
+  const fOrder = new Map<string, number>()
+  let fIdx = 0
+  for (const [featureName, flags] of Object.entries(byFeature)) {
+    fOrder.set(normFlag(featureName), fIdx++)
+    for (const flag of flags) {
+      ffLookup.set(normFlag(flag), { domainName, featureName })
+    }
+  }
+  featureOrderByDomain.set(normFlag(domainName), fOrder)
+}
+
+function domainMetaByName(domainName: string) {
+  const existing = featureStore.allDomains.find((d) => normFlag(d.name) === normFlag(domainName))
+  if (existing) return existing
+  return {
+    id: domainName.toLowerCase().replace(/[^\w]+/g, '_'),
+    name: domainName,
+    icon: 'mdi-shape-outline',
+    color: '#9E9E9E',
+    description: `${domainName} features`,
+    features: [],
+  }
+}
+
+function resolveMultiState(featureName: string, activeFlags: string[]): { label: string; color: string; denyIcon?: boolean; denyName?: string } | null {
+  const cd = cbDropdownFeatures[featureName]
+  if (!cd) return null
+  const lowerActive = new Set(activeFlags.map((f) => f.toLowerCase()))
+  const hasBase = cd.baseFlag ? lowerActive.has(cd.baseFlag.toLowerCase()) : false
+  const hasAnyOption = cd.options.some((o) => o.flags.length > 0 && o.flags.every((f) => lowerActive.has(f.toLowerCase())))
+  if (!hasBase && !hasAnyOption) {
+    return cd.defaultState ?? null
+  }
+  const matched = [...cd.options]
+    .filter((o) => o.flags.length > 0 && o.flags.every((f) => lowerActive.has(f.toLowerCase())))
+    .sort((a, b) => b.flags.length - a.flags.length)[0]
+  if (matched) {
+    if (matched.hideTag && !matched.denyIcon && !matched.denyName) return null
+    return { label: matched.hideTag ? '' : matched.label, color: matched.color, denyIcon: matched.denyIcon, denyName: matched.denyName }
+  }
+  const fallback = cd.options.find((o) => o.flags.length === 0)
+  return fallback && !fallback.hideTag ? { label: fallback.label, color: fallback.color } : null
+}
+
+interface FeatureCellState {
+  active: boolean
+  stateLabel: string | null
+  stateColor: string | null
+  denyIcon: boolean
+  disabledPositive: boolean
+  flags: string[]
+}
+
+interface ComparisonFeatureRow {
+  featureKey: string
+  name: string
+  perPackage: Record<string, FeatureCellState | null>
+  different: boolean
+}
+
+interface ComparisonDomain {
+  domain: { id: string; name: string; icon: string; color: string }
+  features: ComparisonFeatureRow[]
+}
+
+function buildPackageFeatureState(pkg: Package): Map<string, { domainKey: string; domainName: string; featureName: string; flags: string[]; stateLabel: string | null; stateColor: string | null; denyIcon: boolean; disabledPositive: boolean }> {
+  const result = new Map<string, { domainKey: string; domainName: string; featureName: string; flags: string[]; stateLabel: string | null; stateColor: string | null; denyIcon: boolean; disabledPositive: boolean }>()
+  const activeNorms = new Set(pkg.features.map((f) => normFlag(f)))
+  const invertedFFSet = new Set(Object.values(invertedFlagFeatures).map((v) => normFlag(v.ff)))
+
+  const domainGroupMap = new Map<string, { domainName: string; featureMap: Map<string, string[]> }>()
+
+  for (const rawFlag of pkg.features) {
+    const flag = rawFlag.trim()
+    const norm = normFlag(flag)
+    if (!norm || hiddenQuotaControlFlags.has(norm) || norm === 'unlimited_seats') continue
+    if (invertedFFSet.has(norm)) continue
+
+    const mapped = ffLookup.get(norm)
+    if (!mapped) continue
+
+    const isBundles = normFlag(mapped.domainName) === 'bundles'
+    const displayDomainName = isBundles ? 'Apps' : mapped.domainName
+    const dKey = isBundles ? 'apps' : normFlag(mapped.domainName)
+    if (!domainGroupMap.has(dKey)) {
+      domainGroupMap.set(dKey, { domainName: displayDomainName, featureMap: new Map() })
+    }
+    const dGroup = domainGroupMap.get(dKey)!
+    const fKey = normFlag(mapped.featureName)
+    if (!dGroup.featureMap.has(fKey)) dGroup.featureMap.set(fKey, [])
+    dGroup.featureMap.get(fKey)!.push(flag)
+  }
+
+  // Handle inverted flags
+  for (const [featureName, inv] of Object.entries(invertedFlagFeatures)) {
+    const isDisabled = activeNorms.has(normFlag(inv.ff))
+    const displayName = isDisabled ? inv.disabledName : featureName
+    const dKey = normFlag(inv.domain)
+    if (!domainGroupMap.has(dKey)) {
+      domainGroupMap.set(dKey, { domainName: inv.domain, featureMap: new Map() })
+    }
+    const fKey = normFlag(displayName)
+    if (!domainGroupMap.get(dKey)!.featureMap.has(fKey)) {
+      domainGroupMap.get(dKey)!.featureMap.set(fKey, isDisabled ? [inv.ff] : [])
+    }
+  }
+
+  // Handle defaultState features that appear even without flags
+  for (const [featureName, cd] of Object.entries(cbDropdownFeatures)) {
+    if (!cd.defaultState || !cd.domain) continue
+    const fKey = normFlag(featureName)
+    const dKey = normFlag(cd.domain)
+    const alreadyPresent = domainGroupMap.has(dKey) && domainGroupMap.get(dKey)!.featureMap.has(fKey)
+    if (!alreadyPresent) {
+      if (!domainGroupMap.has(dKey)) {
+        domainGroupMap.set(dKey, { domainName: cd.domain, featureMap: new Map() })
+      }
+      domainGroupMap.get(dKey)!.featureMap.set(fKey, [])
+    }
+  }
+
+  // Domain gate flags
+  const domainGateFlags: Record<string, string> = { 'communication': 'sms_enabled' }
+  for (const [dKey, requiredFlag] of Object.entries(domainGateFlags)) {
+    if (!activeNorms.has(normFlag(requiredFlag)) && domainGroupMap.has(dKey)) {
+      domainGroupMap.delete(dKey)
+    }
+  }
+
+  // Build result map keyed by "domainKey::featureKey"
+  for (const [dKey, dGroup] of domainGroupMap.entries()) {
+    for (const [fKey, flags] of dGroup.featureMap.entries()) {
+      const invertedDisabledMatch = Object.values(invertedFlagFeatures).find((v) => normFlag(v.disabledName) === fKey)
+      const invertedEnabledMatch = Object.entries(invertedFlagFeatures).find(([n]) => normFlag(n) === fKey)
+      const featureName = invertedDisabledMatch
+        ? invertedDisabledMatch.disabledName
+        : invertedEnabledMatch
+          ? invertedEnabledMatch[0]
+          : flags.length > 0
+            ? (ffLookup.get(normFlag(flags[0]))?.featureName || flags[0])
+            : Object.keys(cbDropdownFeatures).find((n) => normFlag(n) === fKey) || fKey
+
+      const state = resolveMultiState(featureName, flags)
+      const displayName = state?.denyName || featureName
+      const isDeny = (!!invertedDisabledMatch && !invertedDisabledMatch.disabledPositive) || (state?.denyIcon ?? false)
+      const disabledPositive = invertedDisabledMatch?.disabledPositive ?? false
+
+      const compositeKey = `${dKey}::${normFlag(displayName)}`
+      result.set(compositeKey, {
+        domainKey: dKey,
+        domainName: dGroup.domainName,
+        featureName: displayName,
+        flags,
+        stateLabel: state?.label ?? null,
+        stateColor: state?.color ?? null,
+        denyIcon: isDeny,
+        disabledPositive,
+      })
+    }
+  }
+
+  return result
+}
+
+const comparisonDomains = computed<ComparisonDomain[]>(() => {
+  if (selectedPackages.value.length < 2) return []
+
+  // Build per-package feature state maps
+  const pkgStates = selectedPackages.value.map((pkg) => ({
+    id: pkg.id,
+    state: buildPackageFeatureState(pkg),
+  }))
+
+  // Collect all composite keys across all packages
+  const allKeys = new Set<string>()
+  for (const { state } of pkgStates) {
+    for (const key of state.keys()) allKeys.add(key)
+  }
+
+  // Group by domain
+  const domainMap = new Map<string, { domainName: string; features: Map<string, ComparisonFeatureRow> }>()
+
+  for (const compositeKey of allKeys) {
+    const [dKey] = compositeKey.split('::')
+    let featureName = ''
+    for (const { state } of pkgStates) {
+      const entry = state.get(compositeKey)
+      if (entry) { featureName = entry.featureName; break }
+    }
+    if (!featureName) continue
+
+    if (!domainMap.has(dKey)) {
+      let domainName = dKey
+      for (const { state } of pkgStates) {
+        const entry = state.get(compositeKey)
+        if (entry) { domainName = entry.domainName; break }
+      }
+      domainMap.set(dKey, { domainName, features: new Map() })
+    }
+
+    const perPackage: Record<string, FeatureCellState | null> = {}
+    const cellStates: string[] = []
+
+    for (const { id, state } of pkgStates) {
+      const entry = state.get(compositeKey)
+      if (entry) {
+        perPackage[id] = {
+          active: true,
+          stateLabel: entry.stateLabel,
+          stateColor: entry.stateColor,
+          denyIcon: entry.denyIcon,
+          disabledPositive: entry.disabledPositive,
+          flags: entry.flags,
+        }
+        cellStates.push(`${entry.stateLabel ?? ''}|${entry.denyIcon}|${entry.disabledPositive}`)
+      } else {
+        perPackage[id] = null
+        cellStates.push('__absent__')
+      }
+    }
+
+    const different = cellStates.some((s) => s !== cellStates[0])
+
+    domainMap.get(dKey)!.features.set(compositeKey, {
+      featureKey: compositeKey,
+      name: featureName,
+      perPackage,
+      different,
+    })
+  }
+
+  // Build ordered output
+  return [...domainMap.entries()]
+    .map(([dKey, group]) => {
+      const orderKey = dKey === 'apps' ? 'bundles' : dKey
+      const domain = dKey === 'apps'
+        ? { id: 'apps', name: 'Apps', icon: 'mdi-apps', color: '#7C4DFF', description: '', features: [] }
+        : domainMetaByName(group.domainName)
+
+      const fOrder = featureOrderByDomain.get(orderKey) ?? featureOrderByDomain.get(dKey)
+      const features = [...group.features.values()].sort((a, b) => {
+        const orderA = fOrder?.get(normFlag(a.name)) ?? 9999
+        const orderB = fOrder?.get(normFlag(b.name)) ?? 9999
+        return orderA - orderB
+      })
+
+      return {
+        domain: { id: domain.id, name: domain.name, icon: domain.icon, color: domain.color },
+        features,
+        _order: domainOrder.get(orderKey) ?? domainOrder.get(dKey) ?? 9999,
+      }
+    })
+    .filter((d) => d.features.length > 0)
+    .sort((a, b) => a._order - b._order)
+})
+
+// --- Table sizing ---
+const LABEL_COL_WIDTH = 280
+const PKG_COL_MIN_WIDTH = 160
+
+const pkgColStyle = computed(() => {
+  const w = Math.max(PKG_COL_MIN_WIDTH, Math.floor((900 - LABEL_COL_WIDTH) / Math.max(selectedPackages.value.length, 1)))
+  return { width: `${w}px` }
+})
+
+const tableWidthStyle = computed(() => {
+  const colW = parseInt(pkgColStyle.value.width)
+  const total = LABEL_COL_WIDTH + colW * selectedPackages.value.length
+  return { width: `${Math.max(total, 100)}px`, minWidth: '100%' }
+})
 
 onMounted(async () => {
   try {
@@ -365,3 +828,69 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+.comparison-table-wrapper {
+  overflow-x: auto;
+}
+
+.comparison-table {
+  table-layout: fixed;
+}
+
+.comparison-table .label-col {
+  width: 280px;
+}
+
+.comparison-table .sticky-col {
+  position: sticky;
+  left: 0;
+  background: rgb(var(--v-theme-surface));
+  z-index: 1;
+  width: 280px;
+  min-width: 280px;
+  max-width: 280px;
+}
+
+.comparison-table .pkg-col {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.bg-amber-lighten-5 .sticky-col {
+  background: rgb(255, 248, 225);
+}
+
+.section-title {
+  cursor: pointer;
+}
+.section-title:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+  border-radius: 4px;
+}
+
+.ff-toggle {
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+}
+.ff-toggle :deep(.v-label) {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.ff-names {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+}
+
+.ff-code {
+  font-size: 0.65rem;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 1px 4px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+</style>

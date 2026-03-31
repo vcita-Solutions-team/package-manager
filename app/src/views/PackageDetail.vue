@@ -24,6 +24,7 @@
     <div class="mb-4">
       <div class="d-flex align-center" style="gap: 8px;">
         <h1 class="text-h5 font-weight-bold">{{ pkg.display_name || pkg.name }}<span v-if="pkg.name && pkg.display_name" class="text-medium-emphasis font-weight-regular"> ({{ pkg.name }})</span></h1>
+        <v-chip v-if="pkg.deprecated" color="grey" size="small" variant="tonal" prepend-icon="mdi-archive-off-outline">Deprecated</v-chip>
         <v-chip v-if="pkg.free" color="success" size="small" variant="tonal">FREE</v-chip>
       </div>
     </div>
@@ -33,7 +34,7 @@
       <v-col cols="12" md="8">
         <!-- Validation -->
         <v-card v-if="validationMessages.length > 0" variant="flat" class="border rounded-lg mb-4">
-          <v-card-title class="text-subtitle-1 d-flex align-center">
+          <v-card-title class="text-subtitle-1 font-weight-bold d-flex align-center">
             <v-icon class="mr-2" size="small" color="warning">mdi-alert-circle-outline</v-icon>
             Validation Issues ({{ validationMessages.length }})
           </v-card-title>
@@ -53,10 +54,10 @@
 
         <!-- Features by domain -->
         <v-card variant="flat" class="border rounded-lg mb-4">
-          <v-card-title class="text-subtitle-1 d-flex align-center justify-space-between">
+          <v-card-title class="text-subtitle-1 font-weight-bold d-flex align-center justify-space-between">
             <div class="d-flex align-center">
               <v-icon class="mr-2" size="small">mdi-format-list-checks</v-icon>
-              Features ({{ pkg.features.length }})
+              Features
             </div>
             <div class="d-flex align-center" style="gap: 12px;">
               <v-switch
@@ -150,7 +151,7 @@
       <v-col cols="12" md="4">
         <!-- Settings -->
         <v-card variant="flat" class="border rounded-lg mb-4">
-          <v-card-title class="text-subtitle-1 d-flex align-center sidebar-card-title" @click="sidebarCollapsed.settings = !sidebarCollapsed.settings" style="cursor: pointer;">
+          <v-card-title class="text-subtitle-1 font-weight-bold d-flex align-center sidebar-card-title" @click="sidebarCollapsed.settings = !sidebarCollapsed.settings" style="cursor: pointer;">
             <v-icon class="mr-2" size="small">mdi-cog-outline</v-icon>
             Settings
             <v-spacer />
@@ -192,7 +193,7 @@
 
         <!-- Quotas -->
         <v-card variant="flat" class="border rounded-lg mb-4">
-          <v-card-title class="text-subtitle-1 d-flex align-center sidebar-card-title" @click="sidebarCollapsed.quotas = !sidebarCollapsed.quotas" style="cursor: pointer;">
+          <v-card-title class="text-subtitle-1 font-weight-bold d-flex align-center sidebar-card-title" @click="sidebarCollapsed.quotas = !sidebarCollapsed.quotas" style="cursor: pointer;">
             <v-icon class="mr-2" size="small">mdi-counter</v-icon>
             Quotas
             <v-spacer />
@@ -210,7 +211,7 @@
 
         <!-- Bundles -->
         <v-card variant="flat" class="border rounded-lg mb-4">
-          <v-card-title class="text-subtitle-1 d-flex align-center sidebar-card-title" @click="sidebarCollapsed.bundles = !sidebarCollapsed.bundles" style="cursor: pointer;">
+          <v-card-title class="text-subtitle-1 font-weight-bold d-flex align-center sidebar-card-title" @click="sidebarCollapsed.bundles = !sidebarCollapsed.bundles" style="cursor: pointer;">
             <v-icon class="mr-2" size="small">mdi-package-variant-closed</v-icon>
             Bundles
             <v-spacer />
@@ -228,7 +229,7 @@
 
         <!-- Audit trail -->
         <v-card variant="flat" class="border rounded-lg">
-          <v-card-title class="text-subtitle-1 d-flex align-center sidebar-card-title" @click="sidebarCollapsed.history = !sidebarCollapsed.history" style="cursor: pointer;">
+          <v-card-title class="text-subtitle-1 font-weight-bold d-flex align-center sidebar-card-title" @click="sidebarCollapsed.history = !sidebarCollapsed.history" style="cursor: pointer;">
             <v-icon class="mr-2" size="small">mdi-history</v-icon>
             Change History
             <v-spacer />
@@ -692,7 +693,7 @@ function formatDate(iso: string) {
 }
 
 function goCompare() {
-  router.push({ path: '/compare', query: { a: pkg.value?.id } })
+  router.push({ path: '/compare', query: { ids: pkg.value?.id } })
 }
 
 onMounted(async () => {

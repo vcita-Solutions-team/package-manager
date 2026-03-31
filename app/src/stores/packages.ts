@@ -10,6 +10,31 @@ export const usePackageStore = defineStore('packages', () => {
     allCatalogFeatures.map((f) => [f.name.toLowerCase(), f.name]),
   )
 
+  const DEPRECATED_STORAGE_KEY = 'pkg_deprecated_flags'
+
+  function loadDeprecatedFlags(): Record<string, boolean> {
+    try {
+      return JSON.parse(localStorage.getItem(DEPRECATED_STORAGE_KEY) || '{}')
+    } catch { return {} }
+  }
+
+  function saveDeprecatedFlag(id: string, value: boolean) {
+    const flags = loadDeprecatedFlags()
+    if (value) flags[id] = true
+    else delete flags[id]
+    localStorage.setItem(DEPRECATED_STORAGE_KEY, JSON.stringify(flags))
+  }
+
+  function isDeprecated(id: string): boolean {
+    return !!loadDeprecatedFlags()[id]
+  }
+
+  function setDeprecated(id: string, value: boolean) {
+    saveDeprecatedFlag(id, value)
+    const pkg = packages.value.find((p) => p.id === id)
+    if (pkg) pkg.deprecated = value
+  }
+
   const packages = ref<Package[]>([])
   const auditEntries = ref<AuditEntry[]>([])
   const loading = ref(false)
@@ -443,6 +468,7 @@ export const usePackageStore = defineStore('packages', () => {
       display_name: resolvedDisplayName,
       staff_slots: staffSlots,
       free: toBoolean(source?.free ?? source?.is_free ?? raw?.free ?? raw?.is_free, false),
+      deprecated: isDeprecated(normalizedId),
       created_at: pickDate(source?.created_at, source?.createdAt, raw?.created_at, raw?.createdAt),
       updated_at: pickDate(source?.updated_at, source?.updatedAt, raw?.updated_at, raw?.updatedAt),
       settings: {
@@ -734,5 +760,6 @@ export const usePackageStore = defineStore('packages', () => {
     createPackage,
     updatePackage,
     clonePackage,
+    setDeprecated,
   }
 })

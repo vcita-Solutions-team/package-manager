@@ -98,8 +98,8 @@ onMounted(async () => {
 
 const navItems = [
   { title: 'Packages', icon: 'mdi-package-variant-closed', to: '/' },
-  { title: 'Feature Catalog', icon: 'mdi-format-list-checks', to: '/features' },
   { title: 'Compare', icon: 'mdi-compare-horizontal', to: '/compare' },
+  { title: 'Feature Catalog', icon: 'mdi-format-list-checks', to: '/features' },
 ]
 
 const currentPageTitle = computed(() => {

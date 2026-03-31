@@ -26,7 +26,7 @@
       <v-col cols="12" md="8">
         <!-- Basic Info -->
         <v-card variant="flat" class="border rounded-lg mb-4">
-          <v-card-title class="text-subtitle-1">
+          <v-card-title class="text-subtitle-1 font-weight-bold">
             <v-icon class="mr-2" size="small">mdi-information-outline</v-icon>
             Package Information
           </v-card-title>
@@ -53,15 +53,24 @@
                 />
               </v-col>
             </v-row>
+            <v-checkbox
+              v-if="isEdit"
+              v-model="formDeprecated"
+              label="Deprecated"
+              density="compact"
+              hide-details
+              color="error"
+              class="mt-0"
+            />
           </v-card-text>
         </v-card>
 
         <!-- Features by domain -->
         <v-card variant="flat" class="border rounded-lg mb-4">
-          <v-card-title class="text-subtitle-1 d-flex align-center justify-space-between">
+          <v-card-title class="text-subtitle-1 font-weight-bold d-flex align-center justify-space-between">
             <div>
               <v-icon class="mr-2" size="small">mdi-format-list-checks</v-icon>
-              Features ({{ visibleFeatureCount }} selected)
+              Features
             </div>
             <v-text-field
               v-model="featureSearch"
@@ -94,7 +103,7 @@
                         Error
                       </v-chip>
                       <v-chip size="x-small" variant="tonal" :color="domainEnabledCount(domain) > 0 ? 'success' : 'grey'">
-                        {{ domainEnabledCount(domain) }} / {{ domain.features.length }}
+                        {{ domainEnabledCount(domain) }} / {{ groupDomainFeatures(domain.features).length }}
                       </v-chip>
                     </div>
                   </div>
@@ -182,11 +191,8 @@
                     </template>
                     <!-- Multiple FFs: show feature name header + individual FF checkboxes -->
                     <template v-else>
-                      <div class="d-flex align-center justify-space-between mb-1">
+                      <div class="mb-1">
                         <span class="text-body-2 font-weight-medium">{{ group.name }}</span>
-                        <v-chip size="x-small" variant="tonal" :color="groupEnabledCount(group.flags) > 0 ? 'success' : 'grey'">
-                          {{ groupEnabledCount(group.flags) }} / {{ group.flags.length }}
-                        </v-chip>
                       </div>
                       <div v-for="feature in group.flags" :key="feature.id" class="d-flex align-center ml-6" style="margin-top: -2px; margin-bottom: -2px;">
                         <v-checkbox
@@ -213,7 +219,7 @@
       <v-col cols="12" md="4">
         <!-- Settings -->
         <v-card variant="flat" class="border rounded-lg mb-4">
-          <v-card-title class="text-subtitle-1 d-flex align-center sidebar-card-title" @click="sidebarCollapsed.settings = !sidebarCollapsed.settings" style="cursor: pointer;">
+          <v-card-title class="text-subtitle-1 font-weight-bold d-flex align-center sidebar-card-title" @click="sidebarCollapsed.settings = !sidebarCollapsed.settings" style="cursor: pointer;">
             <v-icon class="mr-2" size="small">mdi-cog-outline</v-icon>
             Settings
             <v-spacer />
@@ -246,7 +252,7 @@
 
         <!-- Quotas -->
         <v-card variant="flat" class="border rounded-lg mb-4">
-          <v-card-title class="text-subtitle-1 d-flex align-center sidebar-card-title" @click="sidebarCollapsed.quotas = !sidebarCollapsed.quotas" style="cursor: pointer;">
+          <v-card-title class="text-subtitle-1 font-weight-bold d-flex align-center sidebar-card-title" @click="sidebarCollapsed.quotas = !sidebarCollapsed.quotas" style="cursor: pointer;">
             <v-icon class="mr-2" size="small">mdi-counter</v-icon>
             Quotas
             <v-spacer />
@@ -263,7 +269,7 @@
                   variant="outlined"
                   density="compact"
                   hide-details
-                  disabled
+                  :disabled="isEdit"
                   class="quota-input"
                 />
                 <v-select
@@ -272,7 +278,7 @@
                   variant="outlined"
                   density="compact"
                   hide-details
-                  disabled
+                  :disabled="isEdit"
                   class="quota-check"
                 />
               </div>
@@ -284,7 +290,7 @@
                   :min="0"
                   variant="outlined"
                   density="compact"
-                  disabled
+                  :disabled="isEdit || quotaUnlimited[q.key]"
                   :placeholder="quotaUnlimited[q.key] ? 'Unlimited' : ''"
                   hide-details
                   class="quota-input"
@@ -305,7 +311,7 @@
 
         <!-- Bundles -->
         <v-card variant="flat" class="border rounded-lg mb-4">
-          <v-card-title class="text-subtitle-1 d-flex align-center sidebar-card-title" @click="sidebarCollapsed.bundles = !sidebarCollapsed.bundles" style="cursor: pointer;">
+          <v-card-title class="text-subtitle-1 font-weight-bold d-flex align-center sidebar-card-title" @click="sidebarCollapsed.bundles = !sidebarCollapsed.bundles" style="cursor: pointer;">
             <v-icon class="mr-2" size="small">mdi-package-variant-closed</v-icon>
             Bundles
             <v-spacer />
@@ -342,7 +348,7 @@
                 variant="outlined"
                 density="compact"
                 hide-details
-                disabled
+                :disabled="isEdit"
                 class="quota-input"
               />
               <div class="quota-check" />
@@ -356,7 +362,7 @@
                 variant="outlined"
                 density="compact"
                 hide-details
-                disabled
+                :disabled="isEdit"
                 class="quota-input"
               />
               <div class="quota-check" />
@@ -366,7 +372,7 @@
 
         <!-- Validation -->
         <v-card variant="flat" class="border rounded-lg mb-4">
-          <v-card-title class="text-subtitle-1 d-flex align-center sidebar-card-title" @click="sidebarCollapsed.validation = !sidebarCollapsed.validation" style="cursor: pointer;">
+          <v-card-title class="text-subtitle-1 font-weight-bold d-flex align-center sidebar-card-title" @click="sidebarCollapsed.validation = !sidebarCollapsed.validation" style="cursor: pointer;">
             <v-icon class="mr-2" size="small">mdi-shield-check-outline</v-icon>
             Validation
             <v-spacer />
@@ -434,6 +440,7 @@ const formName = ref('')
 const formDisplayName = ref('')
 const formStaffSlots = ref(1)
 const formFree = ref(false)
+const formDeprecated = ref(false)
 const unlimitedSeats = ref(false)
 const formFeatures = reactive(new Set<string>())
 const sidebarCollapsed = reactive({ settings: false, quotas: false, bundles: false, validation: false })
@@ -650,7 +657,7 @@ const checkboxDropdownFeatures: CheckboxDropdownFeature[] = [
   },
   {
     featureName: 'Onboarding wizard',
-    defaultEnabled: true,
+    defaultEnabled: false,
     defaultOption: 'full',
     uncheckedFlags: ['pkg.business_administration.registration_wizard.deny'],
     options: [
@@ -660,7 +667,7 @@ const checkboxDropdownFeatures: CheckboxDropdownFeature[] = [
   },
   {
     featureName: 'Getting Started wizard',
-    defaultEnabled: true,
+    defaultEnabled: false,
     defaultOption: 'getting_started',
     uncheckedFlags: ['pkg.business_administration.getting_started.deny'],
     options: [
@@ -671,7 +678,7 @@ const checkboxDropdownFeatures: CheckboxDropdownFeature[] = [
   {
     featureName: 'Event Attendees',
     hint: 'Unselecting Event Attendees feature results in 5 attendees limit',
-    defaultEnabled: true,
+    defaultEnabled: false,
     defaultOption: '5att',
     options: [
       { value: '5att', label: '5 Attendees', flags: [] },
@@ -681,7 +688,7 @@ const checkboxDropdownFeatures: CheckboxDropdownFeature[] = [
   {
     featureName: 'Services',
     hint: 'Unselecting Services feature results in 5 services limit',
-    defaultEnabled: true,
+    defaultEnabled: false,
     defaultOption: '5svc',
     options: [
       { value: '1svc', label: '1 Service limit', flags: ['single_service_booking'] },
@@ -795,14 +802,6 @@ const filteredEditorDomains = computed(() => {
     .filter((d) => d.features.length > 0)
 })
 
-const visibleFeatureCount = computed(() => {
-  let count = 0
-  for (const f of formFeatures) {
-    if (!hiddenUnlimitedFlags.has(f.toLowerCase())) count++
-  }
-  return count
-})
-
 interface DomainGateRule {
   domain: string
   gateFeature: string
@@ -886,8 +885,14 @@ function toggleFeature(name: string, value: any) {
   }
 }
 
-function domainEnabledCount(domain: { features: { name: string }[] }) {
-  return domain.features.filter((f) => formFeatures.has(f.name)).length
+function domainEnabledCount(domain: { features: { name: string; business_name: string }[] }) {
+  const groups = groupDomainFeatures(domain.features)
+  return groups.filter((group) => {
+    if (getCbDropdownForGroup(group.name)) return !!cbDropdownEnabled[group.name]
+    if (isLinkedGroup(group.name)) return isLinkedGroupEnabled(group.flags)
+    if (invertedFlagFeatures.has(group.name)) return group.flags.every((f: any) => !formFeatures.has(f.name))
+    return group.flags.some((f: any) => formFeatures.has(f.name))
+  }).length
 }
 
 function getDomainGateWarning(domainName: string): string | null {
@@ -931,10 +936,6 @@ function groupDomainFeatures(features: any[]) {
   return [...byName.entries()].map(([name, flags]) => ({ name, flags }))
 }
 
-function groupEnabledCount(features: { name: string }[]) {
-  return features.filter((f) => formFeatures.has(f.name)).length
-}
-
 function buildQuotas(): PackageQuotas {
   const result: any = {}
   for (const key of quotaKeys) {
@@ -956,6 +957,7 @@ async function onSave() {
         settings: { ...formSettings },
         quotas: buildQuotas(),
       })
+      packageStore.setDeprecated(route.params.id as string, formDeprecated.value)
       saveSuccess.value = true
       setTimeout(() => router.push(`/packages/${route.params.id}`), 1000)
     } else {
@@ -995,6 +997,18 @@ onMounted(async () => {
     return
   }
 
+  if (!isEdit.value) {
+    // Inverted flags: adding the flag makes the checkbox appear unchecked.
+    // These features should start unselected on new packages.
+    const defaultUncheckedInverted = [
+      'hide_sms_channel_from_marketing', // SMS Campaigns
+      'pkg.bus.pendo.deny',              // Pendo
+      'allow_to_send_link',              // Block Links in Messages
+    ]
+    for (const ff of defaultUncheckedInverted) formFeatures.add(ff)
+    syncCbDropdownFromFeatures()
+  }
+
   if (isEdit.value) {
     const pkg = packageStore.getPackageById(route.params.id as string)
     if (pkg) {
@@ -1002,6 +1016,7 @@ onMounted(async () => {
       formDisplayName.value = pkg.display_name
       formStaffSlots.value = pkg.staff_slots
       formFree.value = pkg.free
+      formDeprecated.value = pkg.deprecated
 
       formFeatures.clear()
       pkg.features.forEach((f) => formFeatures.add(f))

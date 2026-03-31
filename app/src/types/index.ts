@@ -50,6 +50,7 @@ export interface Package {
   display_name: string
   staff_slots: number
   free: boolean
+  deprecated: boolean
   created_at: string
   updated_at: string
   settings: PackageSettings

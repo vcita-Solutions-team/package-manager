@@ -9,15 +9,15 @@
     <!-- Header -->
     <div class="mb-4">
       <p class="text-body-2 text-medium-emphasis">
-        {{ packageStore.filteredPackages.length }} of {{ packageStore.packages.length }} packages
+        {{ sortedPackages.length }} of {{ packageStore.packages.length }} packages
       </p>
     </div>
 
     <!-- Filters -->
     <v-card variant="flat" class="border rounded-lg mb-4">
       <v-card-text>
-        <v-row dense>
-          <v-col cols="12" md="6">
+        <v-row dense align="center">
+          <v-col cols="12" md="5">
             <v-text-field
               v-model="packageStore.searchQuery"
               placeholder="Search packages by display name or name"
@@ -28,7 +28,7 @@
               hide-details
             />
           </v-col>
-          <v-col cols="12" md="6">
+          <v-col cols="12" md="5">
             <v-autocomplete
               v-model="packageStore.filterFeature"
               :items="featureOptions"
@@ -40,6 +40,15 @@
               clearable
               hide-details
               prepend-inner-icon="mdi-filter-variant"
+            />
+          </v-col>
+          <v-col cols="12" md="2" class="d-flex justify-end">
+            <v-switch
+              v-model="hideDeprecated"
+              label="Active only"
+              density="compact"
+              hide-details
+              color="success"
             />
           </v-col>
         </v-row>
@@ -58,7 +67,7 @@
     </v-alert>
 
     <!-- Package list -->
-    <v-card v-if="packageStore.filteredPackages.length > 0" variant="flat" class="border rounded-lg">
+    <v-card v-if="sortedPackages.length > 0" variant="flat" class="border rounded-lg">
       <v-table density="comfortable">
         <thead>
           <tr>
@@ -92,7 +101,14 @@
         <tbody>
           <tr v-for="pkg in sortedPackages" :key="pkg.id" class="clickable-row" @click="goToPackage(pkg.id)">
             <td>
-              <div class="font-weight-bold">{{ pkg.display_name }}</div>
+              <div class="d-flex align-center" style="gap: 8px;">
+                <span class="font-weight-bold">{{ pkg.display_name }}</span>
+                <v-tooltip v-if="pkg.deprecated" text="Deprecated" location="top">
+                  <template #activator="{ props }">
+                    <v-icon v-bind="props" icon="mdi-archive-off-outline" size="small" color="grey" />
+                  </template>
+                </v-tooltip>
+              </div>
             </td>
             <td class="text-caption text-medium-emphasis">{{ pkg.name }}</td>
             <td class="text-caption text-medium-emphasis">{{ formatDate(pkg.created_at) }}</td>
@@ -109,7 +125,7 @@
 
     <!-- Empty state -->
     <v-card
-      v-if="packageStore.filteredPackages.length === 0"
+      v-if="sortedPackages.length === 0"
       variant="flat"
       class="border rounded-lg pa-8 text-center"
     >
@@ -153,7 +169,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePackageStore } from '@/stores/packages'
 import { useFeatureStore } from '@/stores/features'
@@ -171,6 +187,8 @@ const loadError = ref('')
 type SortColumn = 'display_name' | 'name' | 'created_at' | 'updated_at'
 const sortBy = ref<SortColumn>('display_name')
 const sortDir = ref<'asc' | 'desc'>('asc')
+const hideDeprecated = ref(localStorage.getItem('hideDeprecated') !== 'false')
+watch(hideDeprecated, (v) => localStorage.setItem('hideDeprecated', String(v)))
 
 const featureOptions = computed(() =>
   featureStore.allFeatures.map((f) => ({
@@ -182,7 +200,10 @@ const featureOptions = computed(() =>
 const isDateColumn = (col: SortColumn) => col === 'created_at' || col === 'updated_at'
 
 const sortedPackages = computed(() => {
-  const list = [...packageStore.filteredPackages]
+  const filtered = hideDeprecated.value
+    ? packageStore.filteredPackages.filter((p) => !p.deprecated)
+    : packageStore.filteredPackages
+  const list = [...filtered]
   list.sort((a, b) => {
     let cmp: number
     if (isDateColumn(sortBy.value)) {

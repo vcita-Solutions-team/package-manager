@@ -1,11 +1,5 @@
 <template>
   <v-container fluid class="pa-6">
-    <div class="mb-4">
-      <p class="text-body-2 text-medium-emphasis">
-        {{ featureStore.totalFeatureCount }} feature flags across {{ featureStore.allDomains.length }} domains
-      </p>
-    </div>
-
     <!-- Search -->
     <v-text-field
       v-model="featureStore.searchQuery"
