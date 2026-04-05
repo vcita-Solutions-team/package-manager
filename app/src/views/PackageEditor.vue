@@ -21,6 +21,28 @@
       {{ saveError || loadError || packageStore.error }}
     </v-alert>
 
+    <v-alert
+      v-if="isTemplatePackage"
+      type="warning"
+      variant="tonal"
+      class="mb-4"
+      prominent
+      prepend-icon="mdi-file-document-outline"
+    >
+      <strong>This package is a template.</strong> Updating it might have implications on packages created from this baseline.
+    </v-alert>
+
+    <v-alert
+      v-if="fromTemplateName"
+      type="info"
+      variant="tonal"
+      class="mb-4"
+      prepend-icon="mdi-file-document-outline"
+      closable
+    >
+      Pre-filled from template <strong>{{ fromTemplateName }}</strong>. Set a new name and display name for this package.
+    </v-alert>
+
     <v-row>
       <!-- Main form -->
       <v-col cols="12" md="8">
@@ -291,7 +313,7 @@
                   variant="outlined"
                   density="compact"
                   :disabled="isEdit || quotaUnlimited[q.key]"
-                  :placeholder="quotaUnlimited[q.key] ? 'Unlimited' : ''"
+                  :placeholder="quotaUnlimited[q.key] ? 'Unlimited' : 'Not set'"
                   hide-details
                   class="quota-input"
                 />
@@ -429,6 +451,17 @@ const packageStore = usePackageStore()
 const featureStore = useFeatureStore()
 
 const isEdit = computed(() => !!route.params.id)
+const isTemplatePackage = computed(() => {
+  if (!isEdit.value) return false
+  const pkg = packageStore.getPackageById(route.params.id as string)
+  return pkg?.is_template ?? false
+})
+const fromTemplateName = computed(() => {
+  const templateId = route.query.from as string | undefined
+  if (!templateId || isEdit.value) return ''
+  const pkg = packageStore.getPackageById(templateId)
+  return pkg?.display_name || ''
+})
 const saveSuccess = ref(false)
 const saveError = ref('')
 const loadError = ref('')
@@ -462,7 +495,7 @@ const quotaKeys = [
   'storage_quota',
 ] as const
 
-const formQuotas = reactive<Record<string, number>>({
+const formQuotas = reactive<Record<string, number | null>>({
   invoice_monthly_quota: 20,
   campaign_recipients_monthly_quota: 500,
   estimate_monthly_quota: 10,
@@ -939,7 +972,12 @@ function groupDomainFeatures(features: any[]) {
 function buildQuotas(): PackageQuotas {
   const result: any = {}
   for (const key of quotaKeys) {
-    result[key] = quotaUnlimited[key] ? null : formQuotas[key]
+    if (quotaUnlimited[key]) {
+      result[key] = null
+    } else {
+      const v = formQuotas[key]
+      result[key] = v == null || v === '' || Number.isNaN(Number(v)) ? null : Number(v)
+    }
   }
   return result as PackageQuotas
 }
@@ -991,6 +1029,8 @@ onMounted(async () => {
   try {
     if (isEdit.value) {
       await packageStore.loadPackageById(route.params.id as string, true)
+    } else if (route.query.from) {
+      await packageStore.loadPackageById(route.query.from as string, true)
     }
   } catch (err: any) {
     loadError.value = err?.response?.data?.message || err?.message || 'Failed to load packages'
@@ -998,15 +1038,45 @@ onMounted(async () => {
   }
 
   if (!isEdit.value) {
-    // Inverted flags: adding the flag makes the checkbox appear unchecked.
-    // These features should start unselected on new packages.
-    const defaultUncheckedInverted = [
-      'hide_sms_channel_from_marketing', // SMS Campaigns
-      'pkg.bus.pendo.deny',              // Pendo
-      'allow_to_send_link',              // Block Links in Messages
-    ]
-    for (const ff of defaultUncheckedInverted) formFeatures.add(ff)
-    syncCbDropdownFromFeatures()
+    const templateId = route.query.from as string | undefined
+    const templatePkg = templateId ? packageStore.getPackageById(templateId) : null
+
+    if (templatePkg) {
+      formName.value = ''
+      formDisplayName.value = ''
+      formStaffSlots.value = templatePkg.staff_slots
+      formFree.value = templatePkg.free
+
+      formFeatures.clear()
+      templatePkg.features.forEach((f) => formFeatures.add(f))
+
+      Object.assign(formSettings, templatePkg.settings)
+
+      for (const [key, flag] of Object.entries(unlimitedFlagMap)) {
+        quotaUnlimited[key] = formFeatures.has(flag)
+      }
+
+      for (const key of quotaKeys) {
+        const val = templatePkg.quotas[key]
+        if (quotaUnlimited[key]) {
+          formQuotas[key] = null
+        } else {
+          formQuotas[key] = val
+        }
+      }
+
+      unlimitedSeats.value = formFeatures.has('unlimited_seats')
+      syncCbDropdownFromFeatures()
+      syncStorageFromBytes()
+    } else {
+      const defaultUncheckedInverted = [
+        'hide_sms_channel_from_marketing',
+        'pkg.bus.pendo.deny',
+        'allow_to_send_link',
+      ]
+      for (const ff of defaultUncheckedInverted) formFeatures.add(ff)
+      syncCbDropdownFromFeatures()
+    }
   }
 
   if (isEdit.value) {
@@ -1030,9 +1100,9 @@ onMounted(async () => {
       for (const key of quotaKeys) {
         const val = pkg.quotas[key]
         if (quotaUnlimited[key]) {
-          formQuotas[key] = 0
+          formQuotas[key] = null
         } else {
-          formQuotas[key] = val ?? 0
+          formQuotas[key] = val
         }
       }
 
@@ -1050,6 +1120,8 @@ onMounted(async () => {
 }
 .feature-row {
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
 }
 .feature-row:last-child {
   border-bottom: none;

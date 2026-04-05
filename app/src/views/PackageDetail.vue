@@ -24,6 +24,7 @@
     <div class="mb-4">
       <div class="d-flex align-center" style="gap: 8px;">
         <h1 class="text-h5 font-weight-bold">{{ pkg.display_name || pkg.name }}<span v-if="pkg.name && pkg.display_name" class="text-medium-emphasis font-weight-regular"> ({{ pkg.name }})</span></h1>
+        <v-chip v-if="pkg.is_template" color="info" size="small" variant="tonal" prepend-icon="mdi-file-document-outline">Template</v-chip>
         <v-chip v-if="pkg.deprecated" color="grey" size="small" variant="tonal" prepend-icon="mdi-archive-off-outline">Deprecated</v-chip>
         <v-chip v-if="pkg.free" color="success" size="small" variant="tonal">FREE</v-chip>
       </div>

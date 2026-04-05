@@ -11,10 +11,19 @@
       {{ loadError || packageStore.error }}
     </v-alert>
 
-    <div class="mb-4">
+    <div class="d-flex align-center justify-space-between mb-4">
       <p class="text-body-2 text-medium-emphasis">
         Select packages to compare side by side. Differences are highlighted.
       </p>
+      <v-btn
+        v-if="selectedPackages.length >= 2"
+        size="small"
+        variant="tonal"
+        prepend-icon="mdi-download"
+        @click="exportCsv"
+      >
+        Export CSV
+      </v-btn>
     </div>
 
     <!-- Package selector -->
@@ -63,7 +72,7 @@
               <tr>
                 <th class="sticky-col"></th>
                 <th v-for="pkg in selectedPackages" :key="pkg.id" class="text-center pkg-col">
-                  {{ pkg.display_name }}
+                  <strong>{{ pkg.display_name }}</strong> <span class="text-medium-emphasis font-weight-regular">({{ pkg.name }})</span>
                 </th>
               </tr>
             </thead>
@@ -104,7 +113,7 @@
               <tr>
                 <th class="sticky-col"></th>
                 <th v-for="pkg in selectedPackages" :key="pkg.id" class="text-center pkg-col">
-                  {{ pkg.display_name }}
+                  <strong>{{ pkg.display_name }}</strong> <span class="text-medium-emphasis font-weight-regular">({{ pkg.name }})</span>
                 </th>
               </tr>
             </thead>
@@ -141,7 +150,7 @@
               <tr>
                 <th class="sticky-col"></th>
                 <th v-for="pkg in selectedPackages" :key="pkg.id" class="text-center pkg-col">
-                  {{ pkg.display_name }}
+                  <strong>{{ pkg.display_name }}</strong> <span class="text-medium-emphasis font-weight-regular">({{ pkg.name }})</span>
                 </th>
               </tr>
             </thead>
@@ -197,7 +206,7 @@
                   <tr>
                     <th class="sticky-col">Feature</th>
                     <th v-for="pkg in selectedPackages" :key="pkg.id" class="text-center pkg-col">
-                      {{ pkg.display_name }}
+                      <strong>{{ pkg.display_name }}</strong> <span class="text-medium-emphasis font-weight-regular">({{ pkg.name }})</span>
                     </th>
                   </tr>
                 </thead>
@@ -819,6 +828,59 @@ const tableWidthStyle = computed(() => {
   const total = LABEL_COL_WIDTH + colW * selectedPackages.value.length
   return { width: `${Math.max(total, 100)}px`, minWidth: '100%' }
 })
+
+function exportCsv() {
+  const pkgs = selectedPackages.value
+  if (pkgs.length < 2) return
+
+  const csvEscape = (val: string) => {
+    if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+      return `"${val.replace(/"/g, '""')}"`
+    }
+    return val
+  }
+
+  const header = ['Section', 'Property', ...pkgs.map((p) => `${p.display_name} (${p.name})`)]
+  const rows: string[][] = []
+
+  // Settings
+  for (const row of settingsRows.value) {
+    rows.push(['Settings', row.label, ...pkgs.map((p) => row.values[p.id] ? 'Yes' : 'No')])
+  }
+
+  // Bundles
+  for (const row of bundleRows.value) {
+    rows.push(['Bundles', row.label, ...pkgs.map((p) => row.values[p.id])])
+  }
+
+  // Quotas
+  for (const row of quotaRows.value) {
+    rows.push(['Quotas', row.label, ...pkgs.map((p) => row.values[p.id])])
+  }
+
+  // Features by domain
+  for (const domainDiff of comparisonDomains.value) {
+    for (const feat of domainDiff.features) {
+      const cells = pkgs.map((p) => {
+        const cell = feat.perPackage[p.id]
+        if (!cell) return ''
+        if (cell.stateLabel) return cell.stateLabel
+        if (cell.denyIcon) return 'Disabled'
+        return 'Yes'
+      })
+      rows.push([domainDiff.domain.name, feat.name, ...cells])
+    }
+  }
+
+  const csv = [header, ...rows].map((r) => r.map(csvEscape).join(',')).join('\n')
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'package-comparison.csv'
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 onMounted(async () => {
   try {

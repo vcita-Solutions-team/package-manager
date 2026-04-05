@@ -11,6 +11,7 @@ export const usePackageStore = defineStore('packages', () => {
   )
 
   const DEPRECATED_STORAGE_KEY = 'pkg_deprecated_flags'
+  const TEMPLATE_STORAGE_KEY = 'pkg_template_flags'
 
   function loadDeprecatedFlags(): Record<string, boolean> {
     try {
@@ -33,6 +34,29 @@ export const usePackageStore = defineStore('packages', () => {
     saveDeprecatedFlag(id, value)
     const pkg = packages.value.find((p) => p.id === id)
     if (pkg) pkg.deprecated = value
+  }
+
+  function loadTemplateFlags(): Record<string, boolean> {
+    try {
+      return JSON.parse(localStorage.getItem(TEMPLATE_STORAGE_KEY) || '{}')
+    } catch { return {} }
+  }
+
+  function saveTemplateFlag(id: string, value: boolean) {
+    const flags = loadTemplateFlags()
+    if (value) flags[id] = true
+    else delete flags[id]
+    localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(flags))
+  }
+
+  function isTemplate(id: string): boolean {
+    return !!loadTemplateFlags()[id]
+  }
+
+  function setTemplate(id: string, value: boolean) {
+    saveTemplateFlag(id, value)
+    const pkg = packages.value.find((p) => p.id === id)
+    if (pkg) pkg.is_template = value
   }
 
   const packages = ref<Package[]>([])
@@ -469,6 +493,7 @@ export const usePackageStore = defineStore('packages', () => {
       staff_slots: staffSlots,
       free: toBoolean(source?.free ?? source?.is_free ?? raw?.free ?? raw?.is_free, false),
       deprecated: isDeprecated(normalizedId),
+      is_template: isTemplate(normalizedId),
       created_at: pickDate(source?.created_at, source?.createdAt, raw?.created_at, raw?.createdAt),
       updated_at: pickDate(source?.updated_at, source?.updatedAt, raw?.updated_at, raw?.updatedAt),
       settings: {
@@ -629,6 +654,29 @@ export const usePackageStore = defineStore('packages', () => {
     return result
   })
 
+  const templateSearchQuery = ref('')
+  const templateFilterFeature = ref<string | null>(null)
+
+  const filteredTemplates = computed(() => {
+    let result = packages.value.filter((p) => p.is_template)
+
+    if (templateSearchQuery.value) {
+      const q = templateSearchQuery.value.toLowerCase()
+      result = result.filter(
+        (p) =>
+          p.display_name.toLowerCase().includes(q) ||
+          p.name.toLowerCase().includes(q),
+      )
+    }
+
+    if (templateFilterFeature.value) {
+      const selected = templateFilterFeature.value.toLowerCase().trim()
+      result = result.filter((p) => p.features.some((f) => f.toLowerCase().trim() === selected))
+    }
+
+    return result
+  })
+
 
   function getPackageById(id: string) {
     return packages.value.find((p) => p.id === id)
@@ -752,6 +800,9 @@ export const usePackageStore = defineStore('packages', () => {
     searchQuery,
     filterFeature,
     filteredPackages,
+    templateSearchQuery,
+    templateFilterFeature,
+    filteredTemplates,
     loadPackages,
     loadPackageById,
     ensureLoaded,
@@ -761,5 +812,6 @@ export const usePackageStore = defineStore('packages', () => {
     updatePackage,
     clonePackage,
     setDeprecated,
+    setTemplate,
   }
 })

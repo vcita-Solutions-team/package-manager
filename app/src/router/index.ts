@@ -6,6 +6,7 @@ const PackageEditor = () => import('@/views/PackageEditor.vue')
 const PackageDetail = () => import('@/views/PackageDetail.vue')
 const FeatureCatalog = () => import('@/views/FeatureCatalog.vue')
 const PackageComparison = () => import('@/views/PackageComparison.vue')
+const TemplateList = () => import('@/views/TemplateList.vue')
 
 const router = createRouter({
   history: createWebHistory(),
@@ -45,6 +46,12 @@ const router = createRouter({
       name: 'features',
       component: FeatureCatalog,
       meta: { title: 'Feature Catalog' },
+    },
+    {
+      path: '/templates',
+      name: 'templates',
+      component: TemplateList,
+      meta: { title: 'Templates' },
     },
     {
       path: '/compare',

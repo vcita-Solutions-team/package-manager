@@ -1,27 +1,8 @@
 <template>
   <v-container fluid class="pa-6">
-    <Teleport to="#appbar-actions">
-      <v-menu location="bottom end">
-        <template #activator="{ props }">
-          <v-btn v-bind="props" color="primary" size="small" prepend-icon="mdi-plus" append-icon="mdi-chevron-down">
-            Create Package
-          </v-btn>
-        </template>
-        <v-list density="compact">
-          <v-list-item to="/packages/new">
-            <div class="d-flex align-center" style="gap: 8px;"><v-icon size="small">mdi-package-variant-plus</v-icon><span class="text-body-2">New Package</span></div>
-          </v-list-item>
-          <v-list-item @click="fromTemplateDialog = true">
-            <div class="d-flex align-center" style="gap: 8px;"><v-icon size="small">mdi-file-document-outline</v-icon><span class="text-body-2">From Template</span></div>
-          </v-list-item>
-        </v-list>
-      </v-menu>
-    </Teleport>
-
-    <!-- Header -->
     <div class="mb-4">
       <p class="text-body-2 text-medium-emphasis">
-        {{ sortedPackages.length }} of {{ packageStore.packages.length }} packages
+        {{ sortedTemplates.length }} of {{ packageStore.filteredTemplates.length }} templates
       </p>
     </div>
 
@@ -29,10 +10,10 @@
     <v-card variant="flat" class="border rounded-lg mb-4">
       <v-card-text>
         <v-row dense align="center">
-          <v-col cols="12" md="5">
+          <v-col cols="12" md="6">
             <v-text-field
-              v-model="packageStore.searchQuery"
-              placeholder="Search packages by display name or name"
+              v-model="packageStore.templateSearchQuery"
+              placeholder="Search templates by display name or name"
               prepend-inner-icon="mdi-magnify"
               variant="outlined"
               density="compact"
@@ -40,9 +21,9 @@
               hide-details
             />
           </v-col>
-          <v-col cols="12" md="5">
+          <v-col cols="12" md="6">
             <v-autocomplete
-              v-model="packageStore.filterFeature"
+              v-model="packageStore.templateFilterFeature"
               :items="featureOptions"
               item-title="label"
               item-value="value"
@@ -52,15 +33,6 @@
               clearable
               hide-details
               prepend-inner-icon="mdi-filter-variant"
-            />
-          </v-col>
-          <v-col cols="12" md="2" class="d-flex justify-end">
-            <v-switch
-              v-model="hideDeprecated"
-              label="Active only"
-              density="compact"
-              hide-details
-              color="success"
             />
           </v-col>
         </v-row>
@@ -78,8 +50,8 @@
       {{ loadError || packageStore.error }}
     </v-alert>
 
-    <!-- Package list -->
-    <v-card v-if="sortedPackages.length > 0" variant="flat" class="border rounded-lg">
+    <!-- Template list -->
+    <v-card v-if="sortedTemplates.length > 0" variant="flat" class="border rounded-lg">
       <v-table density="comfortable">
         <thead>
           <tr>
@@ -111,11 +83,10 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="pkg in sortedPackages" :key="pkg.id" class="clickable-row" @click="goToPackage(pkg.id)">
+          <tr v-for="pkg in sortedTemplates" :key="pkg.id" class="clickable-row" @click="goToPackage(pkg.id)">
             <td>
               <div class="d-flex align-center" style="gap: 8px;">
                 <span class="font-weight-bold">{{ pkg.display_name }}</span>
-                <v-chip v-if="pkg.is_template" size="x-small" color="info" variant="tonal" prepend-icon="mdi-file-document-outline">Template</v-chip>
                 <v-tooltip v-if="pkg.deprecated" text="Deprecated" location="top">
                   <template #activator="{ props }">
                     <v-icon v-bind="props" icon="mdi-archive-off-outline" size="small" color="grey" />
@@ -141,11 +112,11 @@
                   <v-list-item @click="onClone(pkg)">
                     <div class="d-flex align-center" style="gap: 8px;"><v-icon size="small">mdi-content-copy</v-icon><span class="text-body-2">Clone</span></div>
                   </v-list-item>
-                  <v-divider class="my-1" />
-                  <v-list-item v-if="!pkg.is_template" @click="packageStore.setTemplate(pkg.id, true)">
-                    <div class="d-flex align-center" style="gap: 8px;"><v-icon size="small">mdi-bookmark-outline</v-icon><span class="text-body-2">Set as Template</span></div>
+                  <v-list-item @click="onCreateFromTemplate(pkg)">
+                    <div class="d-flex align-center" style="gap: 8px;"><v-icon size="small">mdi-package-variant-plus</v-icon><span class="text-body-2">Create Package</span></div>
                   </v-list-item>
-                  <v-list-item v-else @click="onRemoveTemplate(pkg)">
+                  <v-divider class="my-1" />
+                  <v-list-item @click="onRemoveTemplate(pkg)">
                     <div class="d-flex align-center" style="gap: 8px;"><v-icon size="small">mdi-bookmark-remove-outline</v-icon><span class="text-body-2">Remove Template</span></div>
                   </v-list-item>
                 </v-list>
@@ -158,56 +129,27 @@
 
     <!-- Empty state -->
     <v-card
-      v-if="sortedPackages.length === 0"
+      v-if="sortedTemplates.length === 0"
       variant="flat"
       class="border rounded-lg pa-8 text-center"
     >
-      <v-icon size="64" color="grey-lighten-1">mdi-package-variant</v-icon>
-      <h3 class="text-h6 mt-4 mb-2">No packages found</h3>
+      <v-icon size="64" color="grey-lighten-1">mdi-file-document-outline</v-icon>
+      <h3 class="text-h6 mt-4 mb-2">No templates yet</h3>
       <p class="text-body-2 text-medium-emphasis">
-        Try adjusting your search or filter criteria.
+        Mark a package as a template to use it as a baseline for creating new packages.
       </p>
     </v-card>
 
-    <!-- From template dialog -->
-    <v-dialog v-model="fromTemplateDialog" max-width="500">
-      <v-card>
-        <v-card-title>Create Package from Template</v-card-title>
-        <v-card-text>
-          <p class="text-body-2 mb-4">
-            Select a template to use as the baseline for your new package.
-          </p>
-          <v-autocomplete
-            v-model="selectedTemplateId"
-            :items="templateOptions"
-            item-title="label"
-            item-value="value"
-            placeholder="Search for a template..."
-            variant="outlined"
-            density="compact"
-            hide-details
-            prepend-inner-icon="mdi-file-document-outline"
-            auto-select-first
-          />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="fromTemplateDialog = false">Cancel</v-btn>
-          <v-btn color="primary" :disabled="!selectedTemplateId" @click="confirmFromTemplate">Create</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
     <!-- Remove template confirmation -->
-    <v-dialog v-model="removeTemplateDialog" max-width="420">
+    <v-dialog v-model="removeDialog" max-width="420">
       <v-card>
         <v-card-title>Remove Template</v-card-title>
         <v-card-text>
-          Are you sure you want to remove <strong>{{ removeTemplateTarget?.display_name }}</strong> from templates?
+          Are you sure you want to remove <strong>{{ removeTarget?.display_name }}</strong> from templates?
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="removeTemplateDialog = false">Cancel</v-btn>
+          <v-btn variant="text" @click="removeDialog = false">Cancel</v-btn>
           <v-btn color="primary" @click="confirmRemoveTemplate">Remove</v-btn>
         </v-card-actions>
       </v-card>
@@ -246,7 +188,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePackageStore } from '@/stores/packages'
 import { useFeatureStore } from '@/stores/features'
@@ -256,20 +198,16 @@ const router = useRouter()
 const packageStore = usePackageStore()
 const featureStore = useFeatureStore()
 
-const fromTemplateDialog = ref(false)
-const selectedTemplateId = ref<string | null>(null)
-const removeTemplateDialog = ref(false)
-const removeTemplateTarget = ref<Package | null>(null)
+const loadError = ref('')
+const removeDialog = ref(false)
+const removeTarget = ref<Package | null>(null)
 const cloneDialog = ref(false)
 const cloneSource = ref<Package | null>(null)
 const cloneName = ref('')
 const cloneDisplayName = ref('')
-const loadError = ref('')
 type SortColumn = 'display_name' | 'name' | 'created_at' | 'updated_at'
 const sortBy = ref<SortColumn>('display_name')
 const sortDir = ref<'asc' | 'desc'>('asc')
-const hideDeprecated = ref(localStorage.getItem('hideDeprecated') !== 'false')
-watch(hideDeprecated, (v) => localStorage.setItem('hideDeprecated', String(v)))
 
 const featureOptions = computed(() =>
   featureStore.allFeatures.map((f) => ({
@@ -278,22 +216,10 @@ const featureOptions = computed(() =>
   })),
 )
 
-const templateOptions = computed(() =>
-  packageStore.packages
-    .filter((p) => p.is_template)
-    .map((p) => ({
-      label: `${p.display_name} (${p.name})`,
-      value: p.id,
-    })),
-)
-
 const isDateColumn = (col: SortColumn) => col === 'created_at' || col === 'updated_at'
 
-const sortedPackages = computed(() => {
-  const filtered = hideDeprecated.value
-    ? packageStore.filteredPackages.filter((p) => !p.deprecated)
-    : packageStore.filteredPackages
-  const list = [...filtered]
+const sortedTemplates = computed(() => {
+  const list = [...packageStore.filteredTemplates]
   list.sort((a, b) => {
     let cmp: number
     if (isDateColumn(sortBy.value)) {
@@ -335,22 +261,19 @@ function goToPackage(id: string) {
   router.push(`/packages/${id}`)
 }
 
-function confirmFromTemplate() {
-  if (!selectedTemplateId.value) return
-  router.push({ path: '/packages/new', query: { from: selectedTemplateId.value } })
-  fromTemplateDialog.value = false
-  selectedTemplateId.value = null
+function onCreateFromTemplate(pkg: Package) {
+  router.push({ path: '/packages/new', query: { from: pkg.id } })
 }
 
 function onRemoveTemplate(pkg: Package) {
-  removeTemplateTarget.value = pkg
-  removeTemplateDialog.value = true
+  removeTarget.value = pkg
+  removeDialog.value = true
 }
 
 function confirmRemoveTemplate() {
-  if (!removeTemplateTarget.value) return
-  packageStore.setTemplate(removeTemplateTarget.value.id, false)
-  removeTemplateDialog.value = false
+  if (!removeTarget.value) return
+  packageStore.setTemplate(removeTarget.value.id, false)
+  removeDialog.value = false
 }
 
 function onClone(pkg: Package) {

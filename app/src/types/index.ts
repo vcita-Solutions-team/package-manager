@@ -51,6 +51,7 @@ export interface Package {
   staff_slots: number
   free: boolean
   deprecated: boolean
+  is_template: boolean
   created_at: string
   updated_at: string
   settings: PackageSettings

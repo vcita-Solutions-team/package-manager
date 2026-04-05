@@ -98,6 +98,7 @@ onMounted(async () => {
 
 const navItems = [
   { title: 'Packages', icon: 'mdi-package-variant-closed', to: '/' },
+  { title: 'Templates', icon: 'mdi-file-document-outline', to: '/templates' },
   { title: 'Compare', icon: 'mdi-compare-horizontal', to: '/compare' },
   { title: 'Feature Catalog', icon: 'mdi-format-list-checks', to: '/features' },
 ]
