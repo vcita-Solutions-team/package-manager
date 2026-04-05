@@ -101,6 +101,7 @@ const navItems = [
   { title: 'Templates', icon: 'mdi-file-document-outline', to: '/templates' },
   { title: 'Compare', icon: 'mdi-compare-horizontal', to: '/compare' },
   { title: 'Feature Catalog', icon: 'mdi-format-list-checks', to: '/features' },
+  { title: 'Apps Catalog', icon: 'mdi-apps', to: '/apps' },
 ]
 
 const currentPageTitle = computed(() => {

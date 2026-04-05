@@ -135,7 +135,7 @@
                   <v-list-item :to="`/packages/${pkg.id}`">
                     <div class="d-flex align-center" style="gap: 8px;"><v-icon size="small">mdi-eye-outline</v-icon><span class="text-body-2">View</span></div>
                   </v-list-item>
-                  <v-list-item :to="`/packages/${pkg.id}/edit`">
+                  <v-list-item :to="`/packages/${pkg.id}/edit?ref=packages`">
                     <div class="d-flex align-center" style="gap: 8px;"><v-icon size="small">mdi-pencil-outline</v-icon><span class="text-body-2">Edit</span></div>
                   </v-list-item>
                   <v-list-item @click="onClone(pkg)">

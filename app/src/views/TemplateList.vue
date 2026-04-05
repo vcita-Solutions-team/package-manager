@@ -85,14 +85,7 @@
         <tbody>
           <tr v-for="pkg in sortedTemplates" :key="pkg.id" class="clickable-row" @click="goToPackage(pkg.id)">
             <td>
-              <div class="d-flex align-center" style="gap: 8px;">
-                <span class="font-weight-bold">{{ pkg.display_name }}</span>
-                <v-tooltip v-if="pkg.deprecated" text="Deprecated" location="top">
-                  <template #activator="{ props }">
-                    <v-icon v-bind="props" icon="mdi-archive-off-outline" size="small" color="grey" />
-                  </template>
-                </v-tooltip>
-              </div>
+              <span class="font-weight-bold">{{ pkg.display_name }}</span>
             </td>
             <td class="text-caption text-medium-emphasis">{{ pkg.name }}</td>
             <td class="text-caption text-medium-emphasis">{{ formatDate(pkg.created_at) }}</td>
@@ -103,10 +96,10 @@
                   <v-btn v-bind="props" size="small" variant="text" icon="mdi-dots-vertical" @click.stop />
                 </template>
                 <v-list density="compact">
-                  <v-list-item :to="`/packages/${pkg.id}`">
+                  <v-list-item :to="`/packages/${pkg.id}?ref=templates`">
                     <div class="d-flex align-center" style="gap: 8px;"><v-icon size="small">mdi-eye-outline</v-icon><span class="text-body-2">View</span></div>
                   </v-list-item>
-                  <v-list-item :to="`/packages/${pkg.id}/edit`">
+                  <v-list-item :to="`/packages/${pkg.id}/edit?ref=templates`">
                     <div class="d-flex align-center" style="gap: 8px;"><v-icon size="small">mdi-pencil-outline</v-icon><span class="text-body-2">Edit</span></div>
                   </v-list-item>
                   <v-list-item @click="onClone(pkg)">
@@ -258,11 +251,11 @@ function sortIcon(column: SortColumn) {
 }
 
 function goToPackage(id: string) {
-  router.push(`/packages/${id}`)
+  router.push(`/packages/${id}?ref=templates`)
 }
 
 function onCreateFromTemplate(pkg: Package) {
-  router.push({ path: '/packages/new', query: { from: pkg.id } })
+  router.push({ path: '/packages/new', query: { from: pkg.id, ref: 'templates' } })
 }
 
 function onRemoveTemplate(pkg: Package) {

@@ -68,6 +68,23 @@ export interface ValidationMessage {
   related_features?: string[]
 }
 
+export interface App {
+  name: string
+  category: string
+  price_usd: string
+  price_eur: string
+  price_gbp: string
+  price_chf: string
+}
+
+export interface AppCategory {
+  id: string
+  name: string
+  icon: string
+  color: string
+  apps: App[]
+}
+
 export interface AuditEntry {
   id: string
   package_id: string

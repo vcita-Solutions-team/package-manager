@@ -12,10 +12,10 @@
     </v-alert>
 
     <Teleport to="#appbar-nav">
-      <v-btn icon="mdi-arrow-left" variant="text" size="small" to="/" />
+      <v-btn icon="mdi-arrow-left" variant="text" size="small" :to="backRoute" />
     </Teleport>
     <Teleport to="#appbar-actions">
-      <v-btn color="primary" size="small" prepend-icon="mdi-pencil" :to="`/packages/${pkg.id}/edit`">
+      <v-btn color="primary" size="small" prepend-icon="mdi-pencil" :to="editRoute">
         Edit
       </v-btn>
     </Teleport>
@@ -66,6 +66,7 @@
                 label="Show FFs"
                 density="compact"
                 hide-details
+                color="primary"
                 class="ff-toggle"
               />
               <v-btn
@@ -299,6 +300,12 @@ const showFFs = ref(localStorage.getItem('pkg_showFFs') === 'true')
 watch(showFFs, (val) => localStorage.setItem('pkg_showFFs', String(val)))
 
 const pkg = computed(() => packageStore.getPackageById(route.params.id as string))
+const cameFromTemplates = computed(() => route.query.ref === 'templates')
+const backRoute = computed(() => cameFromTemplates.value ? '/templates' : '/')
+const editRoute = computed(() => {
+  const base = `/packages/${pkg.value?.id}/edit`
+  return cameFromTemplates.value ? `${base}?ref=templates` : base
+})
 const sidebarCollapsed = reactive({ settings: false, quotas: false, bundles: false, history: false })
 const hiddenQuotaControlFlags = new Set([
   'unlimited_clients',

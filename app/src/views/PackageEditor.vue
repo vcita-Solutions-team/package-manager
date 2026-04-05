@@ -1018,10 +1018,15 @@ async function onSave() {
 }
 
 function goBack() {
-  if (isEdit.value) {
+  const ref = route.query.ref as string | undefined
+  if (ref === 'templates') {
+    router.push('/templates')
+  } else if (ref === 'packages') {
+    router.push('/')
+  } else if (isEdit.value) {
     router.push(`/packages/${route.params.id}`)
   } else {
-    router.push('/packages')
+    router.push('/')
   }
 }
 

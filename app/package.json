@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "sync:feature-flags": "node scripts/sync-feature-flags-from-sheet.mjs",
     "sync:feature-flags:from-csv": "node scripts/sync-feature-flags-from-sheet.mjs --from-local-csv",
-    "sync:descriptions": "node scripts/sync-feature-descriptions.mjs"
+    "sync:descriptions": "node scripts/sync-feature-descriptions.mjs",
+    "sync:apps-catalog": "node scripts/sync-apps-catalog.mjs"
   },
   "dependencies": {
     "@fontsource/open-sans": "^5.2.7",
