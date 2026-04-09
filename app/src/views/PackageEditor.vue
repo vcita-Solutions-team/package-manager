@@ -40,7 +40,8 @@
       prepend-icon="mdi-file-document-outline"
       closable
     >
-      Pre-filled from template <strong>{{ fromTemplateName }}</strong>. Set a new name and display name for this package.
+      <template v-if="isClone">Cloned from <strong>{{ fromTemplateName }}</strong> package. Set a new name and display name for this package.</template>
+      <template v-else>Pre-filled from template <strong>{{ fromTemplateName }}</strong>. Set a new name and display name for this package.</template>
     </v-alert>
 
     <v-row>
@@ -211,21 +212,33 @@
                         </v-tooltip>
                       </div>
                     </template>
-                    <!-- Multiple FFs: show feature name header + individual FF checkboxes -->
+                    <!-- Multiple FFs: checkbox + multi-select dropdown -->
                     <template v-else>
-                      <div class="mb-1">
-                        <span class="text-body-2 font-weight-medium">{{ group.name }}</span>
-                      </div>
-                      <div v-for="feature in group.flags" :key="feature.id" class="d-flex align-center ml-6" style="margin-top: -2px; margin-bottom: -2px;">
+                      <div class="d-flex align-center" style="gap: 8px;">
                         <v-checkbox
-                          :model-value="formFeatures.has(feature.name)"
-                          @update:model-value="toggleFeature(feature.name, $event)"
+                          :model-value="group.flags.some(f => formFeatures.has(f.name))"
+                          @update:model-value="toggleMultiGroup(group.flags, $event)"
                           hide-details
                           density="compact"
-                          class="mr-1 flex-grow-0"
+                          class="flex-grow-0"
                         />
-                        <span v-if="ffFriendlyLabels[feature.name]" class="text-caption">{{ ffFriendlyLabels[feature.name] }}</span>
-                        <code v-else class="text-caption">{{ feature.name }}</code>
+                        <span class="text-body-2 font-weight-medium">{{ group.name }}</span>
+                        <v-select
+                          :model-value="group.flags.filter(f => formFeatures.has(f.name)).map(f => f.name)"
+                          @update:model-value="updateMultiGroupSelection(group.flags, $event)"
+                          :items="group.flags.map(f => ({ title: ffFriendlyLabels[f.name] || f.name, value: f.name }))"
+                          item-title="title"
+                          item-value="value"
+                          multiple
+                          chips
+                          closable-chips
+                          hide-details
+                          density="compact"
+                          variant="outlined"
+                          class="multi-ff-select"
+                          style="flex: 1; min-width: 200px;"
+                          placeholder="Select sub-features..."
+                        />
                       </div>
                     </template>
                   </div>
@@ -456,12 +469,13 @@ const isTemplatePackage = computed(() => {
   const pkg = packageStore.getPackageById(route.params.id as string)
   return pkg?.is_template ?? false
 })
-const fromTemplateName = computed(() => {
-  const templateId = route.query.from as string | undefined
-  if (!templateId || isEdit.value) return ''
-  const pkg = packageStore.getPackageById(templateId)
-  return pkg?.display_name || ''
+const fromSourcePkg = computed(() => {
+  const sourceId = route.query.from as string | undefined
+  if (!sourceId || isEdit.value) return null
+  return packageStore.getPackageById(sourceId) || null
 })
+const fromTemplateName = computed(() => fromSourcePkg.value?.display_name || '')
+const isClone = computed(() => fromSourcePkg.value ? !fromSourcePkg.value.is_template : false)
 const saveSuccess = ref(false)
 const saveError = ref('')
 const loadError = ref('')
@@ -918,6 +932,21 @@ function toggleFeature(name: string, value: any) {
   }
 }
 
+function toggleMultiGroup(flags: { name: string }[], value: any) {
+  for (const f of flags) {
+    if (value) formFeatures.add(f.name)
+    else formFeatures.delete(f.name)
+  }
+}
+
+function updateMultiGroupSelection(allFlags: { name: string }[], selectedValues: string[]) {
+  const selected = new Set(selectedValues)
+  for (const f of allFlags) {
+    if (selected.has(f.name)) formFeatures.add(f.name)
+    else formFeatures.delete(f.name)
+  }
+}
+
 function domainEnabledCount(domain: { features: { name: string; business_name: string }[] }) {
   const groups = groupDomainFeatures(domain.features)
   return groups.filter((group) => {
@@ -1160,5 +1189,9 @@ onMounted(async () => {
 .sidebar-card-title:hover {
   background-color: rgba(0, 0, 0, 0.03);
   border-radius: 4px;
+}
+.multi-ff-select :deep(.v-field__input) {
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
 }
 </style>

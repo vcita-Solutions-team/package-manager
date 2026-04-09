@@ -213,35 +213,6 @@
       </v-card>
     </v-dialog>
 
-    <!-- Clone dialog -->
-    <v-dialog v-model="cloneDialog" max-width="500">
-      <v-card>
-        <v-card-title>Clone Package</v-card-title>
-        <v-card-text>
-          <p class="text-body-2 mb-4">
-            Create a copy of <strong>{{ cloneSource?.display_name }}</strong>
-          </p>
-          <v-text-field
-            v-model="cloneName"
-            label="Package name (internal)"
-            variant="outlined"
-            density="compact"
-            class="mb-2"
-          />
-          <v-text-field
-            v-model="cloneDisplayName"
-            label="Display name"
-            variant="outlined"
-            density="compact"
-          />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="cloneDialog = false">Cancel</v-btn>
-          <v-btn color="primary" @click="confirmClone">Clone</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </v-container>
 </template>
 
@@ -260,10 +231,6 @@ const fromTemplateDialog = ref(false)
 const selectedTemplateId = ref<string | null>(null)
 const removeTemplateDialog = ref(false)
 const removeTemplateTarget = ref<Package | null>(null)
-const cloneDialog = ref(false)
-const cloneSource = ref<Package | null>(null)
-const cloneName = ref('')
-const cloneDisplayName = ref('')
 const loadError = ref('')
 type SortColumn = 'display_name' | 'name' | 'created_at' | 'updated_at'
 const sortBy = ref<SortColumn>('display_name')
@@ -354,23 +321,7 @@ function confirmRemoveTemplate() {
 }
 
 function onClone(pkg: Package) {
-  cloneSource.value = pkg
-  cloneName.value = pkg.name + '_copy'
-  cloneDisplayName.value = pkg.display_name + ' (Copy)'
-  cloneDialog.value = true
-}
-
-async function confirmClone() {
-  if (!cloneSource.value) return
-  try {
-    const newPkg = await packageStore.clonePackage(cloneSource.value.id, cloneName.value, cloneDisplayName.value)
-    cloneDialog.value = false
-    if (newPkg) {
-      router.push(`/packages/${newPkg.id}`)
-    }
-  } catch (err: any) {
-    loadError.value = err?.response?.data?.message || err?.message || 'Failed to clone package'
-  }
+  router.push(`/packages/new?from=${pkg.id}&ref=packages`)
 }
 
 onMounted(async () => {

@@ -214,7 +214,7 @@ export const domainFeatureFFMappingRaw: DomainFeatureFFMapping = {
     ]
   },
   "Business Administration": {
-    "Staff": [
+    "Multi Staff": [
       "multistaff_features",
       "joint_availability",
       "staff_role_permissions",
@@ -287,17 +287,8 @@ export const domainFeatureFFMappingRaw: DomainFeatureFFMapping = {
     "Business Hours": [
       "business_hours"
     ],
-    "Branding": [
-      "branding"
-    ],
     "Free Features": [
       "free_features"
-    ],
-    "Tags": [
-      "tags_feature"
-    ],
-    "Review Generation": [
-      "review_generation"
     ],
     "Thryv - websites_enabled": [
       "websites_enabled"
@@ -468,10 +459,10 @@ export const featureDescriptions: Record<string, string> = {
   ultimate_features: 'Email template editing in cliche, Setting Service image',
   no_promotional_links: 'Remove vCita promotional links (automatically removed in WLs)',
   business_hours: 'Allow modification of the business hours',
-  branding: '',
+
   free_features: 'Privilege to turn on reminder in cliche, email signature in vCita, Allow business to mark message as read/unread',
-  tags_feature: 'Tagging of customers',
-  review_generation: 'Open Review basic features',
+
+
   websites_enabled: 'Presents \'websites\' button under online presence. Used to hide website in partners like DUDA that have a competitive solution to website.',
   command_center: 'Thryv only - for command center usage (hides inbox, hides SMS settings etc)',
   basic_white_label: 'Used in Admin form , set the account to manual type if the flag exists and it is white label or direcroty admin',

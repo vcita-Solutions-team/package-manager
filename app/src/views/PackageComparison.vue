@@ -51,8 +51,20 @@
     </v-card>
 
     <template v-if="selectedPackages.length >= 2">
+      <!-- Feature / Setting search -->
+      <v-text-field
+        v-model="featureSearchText"
+        label="Search features, settings, quotas, or FF names"
+        variant="outlined"
+        density="compact"
+        hide-details
+        clearable
+        prepend-inner-icon="mdi-magnify"
+        class="mb-4"
+      />
+
       <!-- Settings -->
-      <v-card variant="flat" class="border rounded-lg mb-4">
+      <v-card v-if="!isSearchActive || filteredSettingsRows.length" variant="flat" class="border rounded-lg mb-4">
         <v-card-title
           class="text-subtitle-1 font-weight-bold d-flex align-center section-title"
           @click="collapsed.settings = !collapsed.settings"
@@ -62,7 +74,7 @@
           <v-spacer />
           <v-icon size="small">{{ collapsed.settings ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </v-card-title>
-        <div v-show="!collapsed.settings" class="comparison-table-wrapper">
+        <div v-show="!collapsed.settings || isSearchActive" class="comparison-table-wrapper">
           <v-table density="compact" class="comparison-table" :style="tableWidthStyle">
             <colgroup>
               <col class="label-col" />
@@ -72,12 +84,12 @@
               <tr>
                 <th class="sticky-col"></th>
                 <th v-for="pkg in selectedPackages" :key="pkg.id" class="text-center pkg-col">
-                  <strong>{{ pkg.display_name }}</strong> <span class="text-medium-emphasis font-weight-regular">({{ pkg.name }})</span>
+                  {{ pkg.display_name }} <span class="text-medium-emphasis font-weight-regular">({{ pkg.name }})</span>
                 </th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="row in settingsRows" :key="row.key" :class="{ 'bg-amber-lighten-5': row.different }">
+              <tr v-for="row in filteredSettingsRows" :key="row.key" :class="{ 'bg-amber-lighten-5': row.different }">
                 <td class="sticky-col font-weight-medium">{{ row.label }}</td>
                 <td v-for="pkg in selectedPackages" :key="pkg.id" class="text-center">
                   <v-icon
@@ -93,7 +105,7 @@
       </v-card>
 
       <!-- Bundles -->
-      <v-card variant="flat" class="border rounded-lg mb-4">
+      <v-card v-if="!isSearchActive || filteredBundleRows.length" variant="flat" class="border rounded-lg mb-4">
         <v-card-title
           class="text-subtitle-1 font-weight-bold d-flex align-center section-title"
           @click="collapsed.bundles = !collapsed.bundles"
@@ -103,7 +115,7 @@
           <v-spacer />
           <v-icon size="small">{{ collapsed.bundles ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </v-card-title>
-        <div v-show="!collapsed.bundles" class="comparison-table-wrapper">
+        <div v-show="!collapsed.bundles || isSearchActive" class="comparison-table-wrapper">
           <v-table density="compact" class="comparison-table" :style="tableWidthStyle">
             <colgroup>
               <col class="label-col" />
@@ -113,12 +125,12 @@
               <tr>
                 <th class="sticky-col"></th>
                 <th v-for="pkg in selectedPackages" :key="pkg.id" class="text-center pkg-col">
-                  <strong>{{ pkg.display_name }}</strong> <span class="text-medium-emphasis font-weight-regular">({{ pkg.name }})</span>
+                  {{ pkg.display_name }} <span class="text-medium-emphasis font-weight-regular">({{ pkg.name }})</span>
                 </th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="row in bundleRows" :key="row.key" :class="{ 'bg-amber-lighten-5': row.different }">
+              <tr v-for="row in filteredBundleRows" :key="row.key" :class="{ 'bg-amber-lighten-5': row.different }">
                 <td class="sticky-col font-weight-medium">{{ row.label }}</td>
                 <td v-for="pkg in selectedPackages" :key="pkg.id" class="text-center">
                   {{ row.values[pkg.id] }}
@@ -130,7 +142,7 @@
       </v-card>
 
       <!-- Quotas -->
-      <v-card variant="flat" class="border rounded-lg mb-4">
+      <v-card v-if="!isSearchActive || filteredQuotaRows.length" variant="flat" class="border rounded-lg mb-4">
         <v-card-title
           class="text-subtitle-1 font-weight-bold d-flex align-center section-title"
           @click="collapsed.quotas = !collapsed.quotas"
@@ -140,7 +152,7 @@
           <v-spacer />
           <v-icon size="small">{{ collapsed.quotas ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </v-card-title>
-        <div v-show="!collapsed.quotas" class="comparison-table-wrapper">
+        <div v-show="!collapsed.quotas || isSearchActive" class="comparison-table-wrapper">
           <v-table density="compact" class="comparison-table" :style="tableWidthStyle">
             <colgroup>
               <col class="label-col" />
@@ -150,12 +162,12 @@
               <tr>
                 <th class="sticky-col"></th>
                 <th v-for="pkg in selectedPackages" :key="pkg.id" class="text-center pkg-col">
-                  <strong>{{ pkg.display_name }}</strong> <span class="text-medium-emphasis font-weight-regular">({{ pkg.name }})</span>
+                  {{ pkg.display_name }} <span class="text-medium-emphasis font-weight-regular">({{ pkg.name }})</span>
                 </th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="q in quotaRows" :key="q.key" :class="{ 'bg-amber-lighten-5': q.different }">
+              <tr v-for="q in filteredQuotaRows" :key="q.key" :class="{ 'bg-amber-lighten-5': q.different }">
                 <td class="sticky-col font-weight-medium">{{ q.label }}</td>
                 <td v-for="pkg in selectedPackages" :key="pkg.id" class="text-center">
                   {{ q.values[pkg.id] }}
@@ -167,7 +179,7 @@
       </v-card>
 
       <!-- Feature Comparison by Domain -->
-      <v-card variant="flat" class="border rounded-lg mb-4">
+      <v-card v-if="!isSearchActive || filteredComparisonDomains.length" variant="flat" class="border rounded-lg mb-4">
         <v-card-title
           class="text-subtitle-1 font-weight-bold d-flex align-center section-title"
           @click="collapsed.features = !collapsed.features"
@@ -187,8 +199,8 @@
             <v-icon size="small">{{ collapsed.features ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
           </div>
         </v-card-title>
-        <v-card-text v-show="!collapsed.features" class="pa-0">
-          <div v-for="domainDiff in comparisonDomains" :key="domainDiff.domain.id" class="mb-2">
+        <v-card-text v-show="!collapsed.features || isSearchActive" class="pa-0">
+          <div v-for="domainDiff in filteredComparisonDomains" :key="domainDiff.domain.id" class="mb-2">
             <div class="d-flex align-center pa-4 pb-2">
               <v-avatar :color="domainDiff.domain.color" variant="tonal" size="28" class="mr-2">
                 <v-icon size="x-small">{{ domainDiff.domain.icon }}</v-icon>
@@ -206,7 +218,7 @@
                   <tr>
                     <th class="sticky-col">Feature</th>
                     <th v-for="pkg in selectedPackages" :key="pkg.id" class="text-center pkg-col">
-                      <strong>{{ pkg.display_name }}</strong> <span class="text-medium-emphasis font-weight-regular">({{ pkg.name }})</span>
+                      {{ pkg.display_name }} <span class="text-medium-emphasis font-weight-regular">({{ pkg.name }})</span>
                     </th>
                   </tr>
                 </thead>
@@ -251,6 +263,19 @@
           </div>
         </v-card-text>
       </v-card>
+
+      <!-- No search results -->
+      <v-card
+        v-if="isSearchActive && !hasAnySearchResults"
+        variant="flat"
+        class="border rounded-lg pa-8 text-center"
+      >
+        <v-icon size="48" color="grey-lighten-1">mdi-magnify-close</v-icon>
+        <h3 class="text-subtitle-1 mt-3 mb-1">No results found</h3>
+        <p class="text-body-2 text-medium-emphasis">
+          No features, settings, or quotas match "{{ featureSearchText }}".
+        </p>
+      </v-card>
     </template>
 
     <!-- Empty / insufficient state -->
@@ -290,6 +315,7 @@ watch(showFFs, (val) => localStorage.setItem('pkg_compare_showFFs', String(val))
 
 const selectedIds = ref<string[]>([])
 const searchText = ref('')
+const featureSearchText = ref('')
 
 const packageOptions = computed(() =>
   packageStore.packages.map((p) => ({
@@ -814,6 +840,84 @@ const comparisonDomains = computed<ComparisonDomain[]>(() => {
     .sort((a, b) => a._order - b._order)
 })
 
+// --- Search / filter ---
+
+function matchesSearch(terms: string[], q: string): boolean {
+  return terms.some(t => t.toLowerCase().includes(q))
+}
+
+const normalizedSearch = computed(() => featureSearchText.value?.trim().toLowerCase() ?? '')
+const isSearchActive = computed(() => normalizedSearch.value.length > 0)
+
+const filteredSettingsRows = computed(() => {
+  if (!isSearchActive.value) return settingsRows.value
+  const q = normalizedSearch.value
+  return settingsRows.value.filter(row => matchesSearch([row.label, row.key], q))
+})
+
+const bundleSearchTerms: Record<string, string[]> = {
+  staff_seats: ['unlimited_seats', 'staff_slots'],
+  sms_us: ['sms_monthly_quota_us_canada'],
+  sms_other: ['sms_monthly_quota_other'],
+}
+
+const filteredBundleRows = computed(() => {
+  if (!isSearchActive.value) return bundleRows.value
+  const q = normalizedSearch.value
+  return bundleRows.value.filter(row =>
+    matchesSearch([row.label, row.key, ...(bundleSearchTerms[row.key] || [])], q),
+  )
+})
+
+const quotaSearchTerms: Record<string, string[]> = {
+  clients_credit: ['unlimited_clients'],
+  invoice_monthly_quota: ['invoices_monthly_unlimited'],
+  estimate_monthly_quota: ['estimates_monthly_unlimited'],
+  campaign_recipients: ['campaign_recipients_monthly_unlimited'],
+}
+
+const filteredQuotaRows = computed(() => {
+  if (!isSearchActive.value) return quotaRows.value
+  const q = normalizedSearch.value
+  return quotaRows.value.filter(row =>
+    matchesSearch([row.label, row.key, ...(quotaSearchTerms[row.key] || [])], q),
+  )
+})
+
+const featureNameToFFs = new Map<string, string[]>()
+for (const [, byFeature] of Object.entries(domainFeatureFFMappingRaw)) {
+  for (const [featureName, flags] of Object.entries(byFeature)) {
+    featureNameToFFs.set(normFlag(featureName), flags.map(f => f.toLowerCase()))
+  }
+}
+
+const filteredComparisonDomains = computed(() => {
+  if (!isSearchActive.value) return comparisonDomains.value
+  const q = normalizedSearch.value
+  return comparisonDomains.value
+    .map(d => ({
+      ...d,
+      features: d.features.filter(f => {
+        const cells = Object.values(f.perPackage).filter((c): c is FeatureCellState => c !== null)
+        const activeFlags = cells.flatMap(c => c.flags)
+        const stateLabels = cells.map(c => c.stateLabel).filter((l): l is string => !!l)
+        const mappingFFs = featureNameToFFs.get(normFlag(f.name)) || []
+        return matchesSearch([f.name, ...activeFlags, ...stateLabels, ...mappingFFs], q)
+      }),
+    }))
+    .filter(d => d.features.length > 0)
+})
+
+const hasAnySearchResults = computed(() => {
+  if (!isSearchActive.value) return true
+  return (
+    filteredSettingsRows.value.length > 0 ||
+    filteredBundleRows.value.length > 0 ||
+    filteredQuotaRows.value.length > 0 ||
+    filteredComparisonDomains.value.length > 0
+  )
+})
+
 // --- Table sizing ---
 const LABEL_COL_WIDTH = 280
 const PKG_COL_MIN_WIDTH = 160
@@ -918,6 +1022,16 @@ onMounted(async () => {
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
+}
+
+.comparison-table td,
+.comparison-table th {
+  border-right: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.comparison-table td:last-child,
+.comparison-table th:last-child {
+  border-right: none;
 }
 
 .bg-amber-lighten-5 .sticky-col {

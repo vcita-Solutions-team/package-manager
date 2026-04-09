@@ -112,33 +112,29 @@
                           <v-icon v-else-if="domainGroup.domain.id === 'trial_spam_prevention'" color="orange" size="small">mdi-shield-lock</v-icon>
                           <v-icon v-else color="success" size="small">mdi-check-circle</v-icon>
                         </template>
-                        <v-list-item-title class="text-body-2 d-flex align-center">
+                        <v-list-item-title class="text-body-2 d-flex align-center flex-wrap" style="gap: 4px;">
                           {{ group.name }}
                           <v-chip
                             v-if="group.stateLabel"
                             size="x-small"
                             :color="group.stateColor || 'info'"
                             variant="flat"
-                            class="ml-2"
                           >
                             {{ group.stateLabel }}
+                          </v-chip>
+                          <v-chip
+                            v-for="sub in group.subFeatures || []"
+                            :key="sub.ff"
+                            color="success"
+                            variant="tonal"
+                            size="x-small"
+                          >
+                            {{ sub.label }}
                           </v-chip>
                         </v-list-item-title>
                         <v-list-item-subtitle v-if="showFFs && !group.subFeatures && group.flags.length > 0" class="text-caption text-medium-emphasis">
                           <template v-for="(flag, i) in group.flags" :key="flag"><code>{{ flag }}</code><span v-if="i < group.flags.length - 1">, </span></template>
                         </v-list-item-subtitle>
-                      </v-list-item>
-                      <v-list-item
-                        v-for="sub in group.subFeatures || []"
-                        :key="sub.ff"
-                        class="ml-8"
-                        density="compact"
-                        style="min-height: 28px;"
-                      >
-                        <template #prepend>
-                          <v-icon color="success" size="x-small">mdi-check</v-icon>
-                        </template>
-                        <v-list-item-title class="text-caption">{{ sub.label }}</v-list-item-title>
                       </v-list-item>
                     </template>
                   </v-list>

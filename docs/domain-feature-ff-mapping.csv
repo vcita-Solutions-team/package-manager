@@ -77,10 +77,10 @@ Marketing,Automated Campaigns,create_delete_automatic_campaigns,Allow business t
 Marketing,Thryv - Pro Campaigns (as an addon),pro_campaigns,Pro campaigns app
 Marketing,Thryv - Pro Campaigns (as an addon),send_pro_campaigns,
 Marketing,Thryv - Pro Campaigns (as an addon),ace_add_on,Enable ACE as Add-on
-Business Administration,Staff,multistaff_features,Allow adding staff
-Business Administration,Staff,joint_availability,Client can see availability for all staff (Allow checking the joint availaibility checkbox)
-Business Administration,Staff,staff_role_permissions,Allow assigning role of staff members
-Business Administration,Staff,auto_reassign,Auto assign client to his staff members based on business setting
+Business Administration,Multi Staff,multistaff_features,Allow adding staff
+Business Administration,Multi Staff,joint_availability,Client can see availability for all staff (Allow checking the joint availaibility checkbox)
+Business Administration,Multi Staff,staff_role_permissions,Allow assigning role of staff members
+Business Administration,Multi Staff,auto_reassign,Auto assign client to his staff members based on business setting
 Business Administration,App Market,app_market_available,vcita App Market (available on the menu)
 Business Administration,Reports,reports,Enabling Reports on the menu
 Business Administration,Reports,detailed_reports,Ability to open the actual reports
@@ -104,10 +104,7 @@ Other,Lead Gen Features,lead_gen_features,"Client Source, Conversation Follow up
 Other,Ultimate Features,ultimate_features,"Email template editing in cliche, Setting Service image"
 Other,No Promotional Links,no_promotional_links,Remove vCita promotional links (automatically removed in WLs)
 Other,Business Hours,business_hours,Allow modification of the business hours
-Other,Branding,branding,
 Other,Free Features,free_features,"Privilege to turn on reminder in cliche, email signature in vCita, Allow business to mark message as read/unread"
-Other,Tags,tags_feature,Tagging of customers
-Other,Review Generation,review_generation,Open Review basic features
 Other,Thryv - websites_enabled,websites_enabled,Presents 'websites' button under online presence. Used to hide website in partners like DUDA that have a competitive solution to website.
 Other,Thryv - command_center,command_center,"Thryv only - for command center usage (hides inbox, hides SMS settings etc)"
 Other,vcita - basic_white_label,basic_white_label,"Used in Admin form , set the account to manual type if the flag exists and it is white label or direcroty admin"
