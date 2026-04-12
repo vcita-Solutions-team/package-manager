@@ -1,6 +1,6 @@
 <template>
   <v-container fluid class="pa-6">
-    <Teleport to="#appbar-actions">
+    <Teleport v-if="!authStore.readOnly" to="#appbar-actions">
       <v-menu location="bottom end">
         <template #activator="{ props }">
           <v-btn v-bind="props" color="primary" size="small" prepend-icon="mdi-plus" append-icon="mdi-chevron-down">
@@ -107,7 +107,7 @@
                 <v-icon end size="x-small">{{ sortIcon('updated_at') }}</v-icon>
               </v-btn>
             </th>
-            <th></th>
+            <th v-if="!authStore.readOnly"></th>
           </tr>
         </thead>
         <tbody>
@@ -126,7 +126,7 @@
             <td class="text-caption text-medium-emphasis">{{ pkg.name }}</td>
             <td class="text-caption text-medium-emphasis">{{ formatDate(pkg.created_at) }}</td>
             <td class="text-caption text-medium-emphasis">{{ formatDate(pkg.updated_at) }}</td>
-            <td class="text-right">
+            <td v-if="!authStore.readOnly" class="text-right">
               <v-menu location="bottom end">
                 <template #activator="{ props }">
                   <v-btn v-bind="props" size="small" variant="text" icon="mdi-dots-vertical" @click.stop />
@@ -221,11 +221,13 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePackageStore } from '@/stores/packages'
 import { useFeatureStore } from '@/stores/features'
+import { useAuthStore } from '@/stores/auth'
 import type { Package } from '@/types'
 
 const router = useRouter()
 const packageStore = usePackageStore()
 const featureStore = useFeatureStore()
+const authStore = useAuthStore()
 
 const fromTemplateDialog = ref(false)
 const selectedTemplateId = ref<string | null>(null)

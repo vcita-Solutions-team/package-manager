@@ -14,16 +14,18 @@
       <v-divider />
 
       <v-list density="comfortable" nav>
-        <v-list-item
-          v-for="item in navItems"
-          :key="item.to"
-          :to="item.to"
-          :prepend-icon="item.icon"
-          :title="item.title"
-          rounded="lg"
-          class="mb-1"
-          color="primary"
-        />
+        <template v-for="(item, i) in navItems" :key="i">
+          <v-divider v-if="'divider' in item" class="my-2" />
+          <v-list-item
+            v-else
+            :to="item.to"
+            :prepend-icon="item.icon"
+            :title="item.title"
+            rounded="lg"
+            class="mb-1"
+            color="primary"
+          />
+        </template>
       </v-list>
 
       <template #append>
@@ -34,20 +36,71 @@
               <v-icon size="small" color="primary">mdi-account-circle</v-icon>
               <span class="text-body-2 text-truncate">{{ authStore.operator?.name || 'Operator' }}</span>
             </div>
-            <v-btn
-              icon="mdi-logout"
-              variant="text"
-              size="x-small"
-              @click="authStore.logout()"
-            />
+            <v-menu location="top end">
+              <template #activator="{ props }">
+                <v-btn
+                  icon="mdi-dots-vertical"
+                  variant="text"
+                  size="x-small"
+                  v-bind="props"
+                />
+              </template>
+              <v-list density="compact" min-width="200">
+                <v-list-item @click="authStore.setReadOnly(!authStore.readOnly)">
+                  <div class="d-flex align-center" style="gap: 8px;">
+                    <v-icon size="small">{{ authStore.readOnly ? 'mdi-lock' : 'mdi-lock-open-variant' }}</v-icon>
+                    <span class="text-body-2">Read-only</span>
+                  </div>
+                  <template #append>
+                    <v-switch
+                      :model-value="authStore.readOnly"
+                      density="compact"
+                      hide-details
+                      color="primary"
+                      @update:model-value="authStore.setReadOnly($event as boolean)"
+                      @click.stop
+                    />
+                  </template>
+                </v-list-item>
+                <v-divider class="my-1" />
+                <v-list-item @click="authStore.logout()">
+                  <div class="d-flex align-center" style="gap: 8px;"><v-icon size="small">mdi-logout</v-icon><span class="text-body-2">Logout</span></div>
+                </v-list-item>
+              </v-list>
+            </v-menu>
           </div>
-          <v-btn
-            v-else
-            icon="mdi-account-circle"
-            variant="text"
-            size="small"
-            @click="authStore.logout()"
-          />
+          <v-menu v-else location="right">
+            <template #activator="{ props }">
+              <v-btn
+                icon="mdi-account-circle"
+                variant="text"
+                size="small"
+                v-bind="props"
+              />
+            </template>
+            <v-list density="compact" min-width="200">
+              <v-list-item @click="authStore.setReadOnly(!authStore.readOnly)">
+                <div class="d-flex align-center" style="gap: 8px;">
+                  <v-icon size="small">{{ authStore.readOnly ? 'mdi-lock' : 'mdi-lock-open-variant' }}</v-icon>
+                  <span class="text-body-2">Read-only</span>
+                </div>
+                <template #append>
+                  <v-switch
+                    :model-value="authStore.readOnly"
+                    density="compact"
+                    hide-details
+                    color="primary"
+                    @update:model-value="authStore.setReadOnly($event as boolean)"
+                    @click.stop
+                  />
+                </template>
+              </v-list-item>
+              <v-divider class="my-1" />
+              <v-list-item @click="authStore.logout()">
+                <div class="d-flex align-center" style="gap: 8px;"><v-icon size="small">mdi-logout</v-icon><span class="text-body-2">Logout</span></div>
+              </v-list-item>
+            </v-list>
+          </v-menu>
         </div>
         <v-divider />
         <div class="pa-2">
@@ -70,6 +123,15 @@
         <span class="text-medium-emphasis">{{ currentPageTitle }}</span>
       </v-app-bar-title>
       <template #append>
+        <v-chip
+          v-if="authStore.readOnly"
+          color="warning"
+          size="small"
+          variant="tonal"
+          prepend-icon="mdi-lock"
+        >
+          Read-only
+        </v-chip>
         <div id="appbar-actions" class="d-flex align-center" style="gap: 8px; margin-right: 24px;" />
       </template>
     </v-app-bar>
@@ -96,16 +158,23 @@ onMounted(async () => {
   }
 })
 
-const navItems = [
+type NavLink = { title: string; icon: string; to: string }
+type NavDivider = { divider: true }
+type NavItem = NavLink | NavDivider
+
+const navItems: NavItem[] = [
   { title: 'Packages', icon: 'mdi-package-variant-closed', to: '/' },
   { title: 'Templates', icon: 'mdi-file-document-outline', to: '/templates' },
   { title: 'Compare', icon: 'mdi-compare-horizontal', to: '/compare' },
   { title: 'Feature Catalog', icon: 'mdi-format-list-checks', to: '/features' },
-  { title: 'Apps Catalog', icon: 'mdi-apps', to: '/apps' },
+  { divider: true },
+  { title: 'Presell', icon: 'mdi-tag-multiple-outline', to: '/presell' },
 ]
 
+const navLinks = navItems.filter((n): n is NavLink => 'to' in n)
+
 const currentPageTitle = computed(() => {
-  const item = navItems.find((n) => n.to === route.path)
+  const item = navLinks.find((n) => n.to === route.path)
   return item?.title || route.meta.title || ''
 })
 </script>

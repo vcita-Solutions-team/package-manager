@@ -5,13 +5,20 @@ import { loginApi, validateTokenApi, fetchOperatorApi, mfaChallengeApi } from '@
 import type { MfaChallengeResponse } from '@/api/auth'
 
 const TOKEN_KEY = 'operator_jwt_token'
+const READ_ONLY_KEY = 'pm_read_only'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem(TOKEN_KEY))
   const operator = ref<any>(null)
   const mfaPending = ref(false)
+  const readOnly = ref(localStorage.getItem(READ_ONLY_KEY) === 'true')
 
   const isAuthenticated = computed(() => token.value !== null)
+
+  function setReadOnly(value: boolean) {
+    readOnly.value = value
+    localStorage.setItem(READ_ONLY_KEY, String(value))
+  }
 
   function setToken(newToken: string) {
     token.value = newToken
@@ -87,6 +94,7 @@ export const useAuthStore = defineStore('auth', () => {
     token,
     operator,
     mfaPending,
+    readOnly,
     isAuthenticated,
     login,
     submitMfaCode,
@@ -95,5 +103,6 @@ export const useAuthStore = defineStore('auth', () => {
     logout,
     clearToken,
     setToken,
+    setReadOnly,
   }
 })

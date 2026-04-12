@@ -1,9 +1,3 @@
-export interface FeatureDependency {
-  feature_name: string
-  type: 'requires' | 'conflicts' | 'coupled'
-  description: string
-}
-
 export interface Feature {
   id: string
   name: string
@@ -13,7 +7,6 @@ export interface Feature {
   packageable: boolean
   value_type: 'boolean' | 'enum' | 'number'
   options?: string[]
-  dependencies: FeatureDependency[]
   sort_order: number
 }
 
@@ -57,15 +50,6 @@ export interface Package {
   settings: PackageSettings
   quotas: PackageQuotas
   features: string[]
-}
-
-export type ValidationSeverity = 'error' | 'warning' | 'info'
-
-export interface ValidationMessage {
-  severity: ValidationSeverity
-  feature: string
-  message: string
-  related_features?: string[]
 }
 
 export interface App {

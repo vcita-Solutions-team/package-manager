@@ -8,6 +8,7 @@ const FeatureCatalog = () => import('@/views/FeatureCatalog.vue')
 const AppsCatalog = () => import('@/views/AppsCatalog.vue')
 const PackageComparison = () => import('@/views/PackageComparison.vue')
 const TemplateList = () => import('@/views/TemplateList.vue')
+const Presell = () => import('@/views/Presell.vue')
 
 const router = createRouter({
   history: createWebHistory(),
@@ -65,6 +66,12 @@ const router = createRouter({
       name: 'compare',
       component: PackageComparison,
       meta: { title: 'Compare Packages' },
+    },
+    {
+      path: '/presell',
+      name: 'presell',
+      component: Presell,
+      meta: { title: 'Presell' },
     },
     {
       path: '/:pathMatch(.*)*',

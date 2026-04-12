@@ -107,7 +107,6 @@ Other,Business Hours,business_hours,Allow modification of the business hours
 Other,Free Features,free_features,"Privilege to turn on reminder in cliche, email signature in vCita, Allow business to mark message as read/unread"
 Other,Thryv - websites_enabled,websites_enabled,Presents 'websites' button under online presence. Used to hide website in partners like DUDA that have a competitive solution to website.
 Other,Thryv - command_center,command_center,"Thryv only - for command center usage (hides inbox, hides SMS settings etc)"
-Other,vcita - basic_white_label,basic_white_label,"Used in Admin form , set the account to manual type if the flag exists and it is white label or direcroty admin"
 Other,Thryv - Soci,soci,Add social content platform (For Thryv only)
 Other,Thryv - Yext Reviews,yext_reviews,View Yext reviews (For Thryv only)
 Other,Thryv - Yext Reviews,pkg.thryv.listings_settings,Show listing settings tile in settings page
@@ -118,3 +117,4 @@ Other,Thryv - ThryvPay,ThryvPay_wizards,Thryv pay for 'Core wizard' and 'Payment
 Other,Thryv - Referral widget,pkg.thryv.referral_widget,
 Other,FCR - Yext,yextApp_include_in_plan,
 Other,FCR - Mono web builder,monowebbuilder_include_in_plan,
+Other,vcita - basic_white_label,basic_white_label,"Used in Admin form , set the account to manual type if the flag exists and it is white label or direcroty admin"

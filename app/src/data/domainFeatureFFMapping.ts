@@ -296,9 +296,6 @@ export const domainFeatureFFMappingRaw: DomainFeatureFFMapping = {
     "Thryv - command_center": [
       "command_center"
     ],
-    "vcita - basic_white_label": [
-      "basic_white_label"
-    ],
     "Thryv - Soci": [
       "soci"
     ],
@@ -320,6 +317,9 @@ export const domainFeatureFFMappingRaw: DomainFeatureFFMapping = {
     ],
     "FCR - Mono web builder": [
       "monowebbuilder_include_in_plan"
+    ],
+    "vcita - basic_white_label": [
+      "basic_white_label"
     ]
   }
 }

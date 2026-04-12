@@ -5,7 +5,7 @@
     </Teleport>
     <Teleport to="#appbar-actions">
       <v-btn variant="outlined" size="small" @click="goBack">Cancel</v-btn>
-      <v-btn color="primary" size="small" prepend-icon="mdi-content-save" @click="onSave" :disabled="!formValid">
+      <v-btn color="primary" size="small" prepend-icon="mdi-content-save" @click="onSave" :disabled="!formValid || authStore.readOnly">
         {{ isEdit ? 'Save Changes' : 'Create Package' }}
       </v-btn>
     </Teleport>
@@ -454,6 +454,7 @@ import { ref, computed, reactive, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePackageStore } from '@/stores/packages'
 import { useFeatureStore } from '@/stores/features'
+import { useAuthStore } from '@/stores/auth'
 import { domainFeatureFFMappingRaw } from '@/data/domainFeatureFFMapping'
 
 import type { PackageSettings, PackageQuotas } from '@/types'
@@ -462,6 +463,7 @@ const route = useRoute()
 const router = useRouter()
 const packageStore = usePackageStore()
 const featureStore = useFeatureStore()
+const authStore = useAuthStore()
 
 const isEdit = computed(() => !!route.params.id)
 const isTemplatePackage = computed(() => {
@@ -485,7 +487,7 @@ const openDomainPanels = ref<number[]>([])
 
 const formName = ref('')
 const formDisplayName = ref('')
-const formStaffSlots = ref(1)
+const formStaffSlots = ref<number | null>(null)
 const formFree = ref(false)
 const formDeprecated = ref(false)
 const unlimitedSeats = ref(false)
@@ -510,15 +512,15 @@ const quotaKeys = [
 ] as const
 
 const formQuotas = reactive<Record<string, number | null>>({
-  invoice_monthly_quota: 20,
-  campaign_recipients_monthly_quota: 500,
-  estimate_monthly_quota: 10,
-  clients_credit: 2000,
-  campaigns_credit: 5,
-  booking_credit: 200,
-  sms_monthly_quota_us_canada: 100,
-  sms_monthly_quota_other: 50,
-  storage_quota: 2 * 1073741824,
+  invoice_monthly_quota: null,
+  campaign_recipients_monthly_quota: null,
+  estimate_monthly_quota: null,
+  clients_credit: null,
+  campaigns_credit: null,
+  booking_credit: null,
+  sms_monthly_quota_us_canada: null,
+  sms_monthly_quota_other: null,
+  storage_quota: null,
 })
 
 const quotaUnlimited = reactive<Record<string, boolean>>({
@@ -550,20 +552,28 @@ const sidebarQuotaFields = quotaFields.filter(
 )
 
 const storageUnit = ref<'MB' | 'GB'>('GB')
-const storageDisplay = ref(2)
+const storageDisplay = ref<number | null>(null)
 
 function syncStorageFromBytes() {
-  const bytes = formQuotas.storage_quota || 0
-  if (bytes >= 1073741824 && bytes % 1073741824 === 0) {
+  const raw = formQuotas.storage_quota
+  if (raw == null) {
+    storageDisplay.value = null
+    return
+  }
+  if (raw >= 1073741824 && raw % 1073741824 === 0) {
     storageUnit.value = 'GB'
-    storageDisplay.value = bytes / 1073741824
+    storageDisplay.value = raw / 1073741824
   } else {
     storageUnit.value = 'MB'
-    storageDisplay.value = Math.round(bytes / 1048576)
+    storageDisplay.value = Math.round(raw / 1048576)
   }
 }
 
 watch([storageDisplay, storageUnit], () => {
+  if (storageDisplay.value == null || storageDisplay.value === '') {
+    formQuotas.storage_quota = null
+    return
+  }
   const n = Number(storageDisplay.value) || 0
   formQuotas.storage_quota = storageUnit.value === 'GB' ? n * 1073741824 : n * 1048576
 })
@@ -906,7 +916,6 @@ const domainGateErrors = computed(() => {
 
 const allValidation = computed(() => [
   ...domainGateErrors.value,
-  ...featureStore.validateFeatures([...formFeatures]),
 ])
 const validationErrors = computed(() => allValidation.value.filter((m) => m.severity === 'error'))
 const validationWarnings = computed(() => allValidation.value.filter((m) => m.severity === 'warning'))

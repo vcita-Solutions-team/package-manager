@@ -14,7 +14,7 @@
     <Teleport to="#appbar-nav">
       <v-btn icon="mdi-arrow-left" variant="text" size="small" :to="backRoute" />
     </Teleport>
-    <Teleport to="#appbar-actions">
+    <Teleport v-if="!authStore.readOnly" to="#appbar-actions">
       <v-btn color="primary" size="small" prepend-icon="mdi-pencil" :to="editRoute">
         Edit
       </v-btn>
@@ -33,25 +33,6 @@
     <v-row>
       <!-- Main content -->
       <v-col cols="12" md="8">
-        <!-- Validation -->
-        <v-card v-if="validationMessages.length > 0" variant="flat" class="border rounded-lg mb-4">
-          <v-card-title class="text-subtitle-1 font-weight-bold d-flex align-center">
-            <v-icon class="mr-2" size="small" color="warning">mdi-alert-circle-outline</v-icon>
-            Validation Issues ({{ validationMessages.length }})
-          </v-card-title>
-          <v-card-text>
-            <v-alert
-              v-for="(msg, i) in validationMessages"
-              :key="i"
-              :type="msg.severity === 'error' ? 'error' : msg.severity === 'warning' ? 'warning' : 'info'"
-              variant="tonal"
-              density="compact"
-              class="mb-2"
-            >
-              <div class="text-body-2">{{ msg.message }}</div>
-            </v-alert>
-          </v-card-text>
-        </v-card>
 
         <!-- Features by domain -->
         <v-card variant="flat" class="border rounded-lg mb-4">
@@ -93,13 +74,16 @@
                       <v-icon size="x-small">{{ domainGroup.domain.icon }}</v-icon>
                     </v-avatar>
                     <span class="text-subtitle-2 font-weight-bold">{{ domainGroup.domain.name }}</span>
-                    <v-chip v-if="domainGroup.hasUpsell" size="x-small" variant="flat" :color="'#fab4cd'" class="ml-1">
+                    <v-chip v-if="domainGroup.disabled" size="x-small" variant="flat" color="#fab4cd" class="ml-1">
+                      Disabled
+                    </v-chip>
+                    <v-chip v-else-if="domainGroup.hasUpsell" size="x-small" variant="flat" color="#fab4cd" class="ml-1">
                       Upsell
                     </v-chip>
                   </div>
                 </v-expansion-panel-title>
                 <v-expansion-panel-text>
-                  <v-list density="compact">
+                  <v-list v-if="domainGroup.groups.length > 0" density="compact">
                     <template
                       v-for="group in domainGroup.groups"
                       :key="`${domainGroup.domain.id}-${group.name}`"
@@ -125,8 +109,6 @@
                           <v-chip
                             v-for="sub in group.subFeatures || []"
                             :key="sub.ff"
-                            color="success"
-                            variant="tonal"
                             size="x-small"
                           >
                             {{ sub.label }}
@@ -138,6 +120,9 @@
                       </v-list-item>
                     </template>
                   </v-list>
+                  <div v-else class="text-body-2 text-medium-emphasis pa-4">
+                    No features enabled for this category.
+                  </div>
                 </v-expansion-panel-text>
               </v-expansion-panel>
             </v-expansion-panels>
@@ -283,6 +268,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePackageStore } from '@/stores/packages'
 import { useFeatureStore } from '@/stores/features'
+import { useAuthStore } from '@/stores/auth'
 import { getFeatureByName } from '@/data/featureCatalog'
 import { domainFeatureFFMappingRaw } from '@/data/domainFeatureFFMapping'
 
@@ -290,6 +276,7 @@ const route = useRoute()
 const router = useRouter()
 const packageStore = usePackageStore()
 const featureStore = useFeatureStore()
+const authStore = useAuthStore()
 const loadError = ref('')
 const openPanels = ref<number[]>([])
 const showFFs = ref(localStorage.getItem('pkg_showFFs') === 'true')
@@ -501,10 +488,6 @@ function domainMetaByName(domainName: string) {
   }
 }
 
-const validationMessages = computed(() => {
-  if (!pkg.value) return []
-  return featureStore.validateFeatures(pkg.value.features)
-})
 
 const featuresByDomain = computed(() => {
   if (!pkg.value) return []
@@ -566,9 +549,11 @@ const featuresByDomain = computed(() => {
   const domainGateFlags: Record<string, string> = {
     'communication': 'sms_enabled',
   }
+  const gatedDisabledKeys = new Set<string>()
   for (const [dKey, requiredFlag] of Object.entries(domainGateFlags)) {
-    if (!activeNorms.has(normFlag(requiredFlag)) && domainGroupMap.has(dKey)) {
-      domainGroupMap.delete(dKey)
+    if (!activeNorms.has(normFlag(requiredFlag))) {
+      gatedDisabledKeys.add(dKey)
+      if (domainGroupMap.has(dKey)) domainGroupMap.delete(dKey)
     }
   }
 
@@ -610,10 +595,32 @@ const featuresByDomain = computed(() => {
         groups,
         flagCount,
         hasUpsell,
+        disabled: false,
         _order: domainOrder.get(orderKey) ?? domainOrder.get(dKey) ?? 9999,
       }
     })
     .sort((a, b) => a._order - b._order)
+
+  const presentDomainKeys = new Set(result.map(r => {
+    if (r.domain.id === 'apps') return 'bundles'
+    return normFlag(r.domain.name)
+  }))
+  for (const domainName of Object.keys(domainFeatureFFMappingRaw)) {
+    const dKey = normFlag(domainName)
+    if (presentDomainKeys.has(dKey)) continue
+    const isBundles = dKey === 'bundles'
+    result.push({
+      domain: isBundles
+        ? { id: 'apps', name: 'Apps', icon: 'mdi-apps', color: '#7C4DFF', description: 'App features', features: [] }
+        : domainMetaByName(domainName),
+      groups: [],
+      flagCount: 0,
+      hasUpsell: false,
+      disabled: true,
+      _order: domainOrder.get(dKey) ?? 9999,
+    })
+  }
+  result.sort((a, b) => a._order - b._order)
 
   if (invalidFlags.length > 0) {
     result.push({

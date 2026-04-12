@@ -56,7 +56,6 @@ export const domains: Domain[] = Object.entries(domainFeatureFFMappingFlagsOnly)
         domain: id,
         packageable: true,
         value_type: 'boolean',
-        dependencies: [],
         sort_order: sortOrder,
       })
     }
