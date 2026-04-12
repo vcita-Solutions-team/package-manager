@@ -16,10 +16,11 @@ export interface MfaChallengeResponse {
   support_link?: string
 }
 
-export async function loginApi(email: string, password: string): Promise<LoginResponse> {
+export async function loginApi(email: string, password: string, captchaToken?: string | null): Promise<LoginResponse> {
   const response = await apiClient.post('/operator_api/v1/authentications/login', {
     email,
     password,
+    captcha_token: captchaToken ?? undefined,
   })
   return response.data
 }

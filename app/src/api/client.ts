@@ -1,21 +1,48 @@
 import axios from 'axios'
 
 const TOKEN_KEY = 'operator_jwt_token'
+const ENV_KEY = 'pm_environment'
 
-const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_OPERATOR_API_URL || 'http://localhost:7100',
-})
+export type AppEnvironment = 'integration' | 'production'
+
+export const ENVIRONMENTS: Record<AppEnvironment, { label: string; apiUrl: string; proxyPrefix: string }> = {
+  integration: { label: 'Integration', apiUrl: 'https://api2.meet2know.com', proxyPrefix: '/proxy-int' },
+  production: { label: 'Production', apiUrl: 'https://api2.myclients.io', proxyPrefix: '/proxy-prod' },
+}
+
+export function getEnvironment(): AppEnvironment {
+  const stored = localStorage.getItem(ENV_KEY) as AppEnvironment | null
+  return stored && stored in ENVIRONMENTS ? stored : 'integration'
+}
+
+export function updateFavicon(env: AppEnvironment) {
+  const link = document.getElementById('app-favicon') as HTMLLinkElement | null
+  if (link) link.href = `/favicon-${env}.png`
+}
+
+export function setEnvironment(env: AppEnvironment) {
+  localStorage.setItem(ENV_KEY, env)
+  updateFavicon(env)
+}
+
+function currentProxyPrefix(): string {
+  return ENVIRONMENTS[getEnvironment()].proxyPrefix
+}
+
+const apiClient = axios.create()
 
 apiClient.interceptors.request.use((config) => {
+  const prefix = currentProxyPrefix()
+  if (config.url && !config.url.startsWith(prefix)) {
+    config.url = prefix + config.url
+  }
   const token = localStorage.getItem(TOKEN_KEY)
   if (token) {
-    // Raw JWT without "Bearer " prefix, matching operator-portal convention
     config.headers.Authorization = token
   }
   return config
 })
 
-// Skip the 401 auto-redirect for auth endpoints (login, token validation)
 const AUTH_PATHS = ['/authentications/']
 
 apiClient.interceptors.response.use(

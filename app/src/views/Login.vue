@@ -11,6 +11,29 @@
           </v-card-subtitle>
 
           <v-card-text>
+            <v-select
+              v-model="selectedEnv"
+              :items="envOptions"
+              item-title="label"
+              item-value="value"
+              label="Environment"
+              variant="outlined"
+              density="comfortable"
+              class="mb-2"
+              :color="selectedEnv === 'production' ? '#131a46' : '#fab4cd'"
+              @update:model-value="onEnvChange"
+            />
+
+            <v-alert
+              v-if="selectedEnv === 'production'"
+              type="warning"
+              variant="tonal"
+              density="compact"
+              class="mb-6"
+            >
+              You are connecting to <strong>Production</strong>
+            </v-alert>
+
             <v-alert
               v-if="errorMessage"
               type="error"
@@ -113,9 +136,27 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { ENVIRONMENTS } from '@/api/client'
+import type { AppEnvironment } from '@/api/client'
+import { useReCaptcha } from 'vue-recaptcha-v3'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { executeRecaptcha, recaptchaLoaded } = useReCaptcha()!
+
+const envOptions = Object.entries(ENVIRONMENTS).map(([value, { label }]) => ({ value, label }))
+const selectedEnv = ref<AppEnvironment>(authStore.environment)
+
+function onEnvChange(env: AppEnvironment) {
+  authStore.switchEnvironment(env)
+  errorMessage.value = ''
+}
+
+async function getCaptchaToken(): Promise<string | null> {
+  if (selectedEnv.value !== 'production') return null
+  await recaptchaLoaded()
+  return await executeRecaptcha('login')
+}
 
 const formMode = ref<'login' | 'mfa'>('login')
 const loading = ref(false)
@@ -139,7 +180,6 @@ const emailRules = [
 
 const passwordRules = [
   (v: string) => !!v || 'Password is required',
-  (v: string) => v.length >= 6 || 'Password must be at least 6 characters',
 ]
 
 const mfaCodeRules = [
@@ -161,7 +201,8 @@ async function onLogin() {
   loading.value = true
   errorMessage.value = ''
 
-  const result = await authStore.login(email.value, password.value)
+  const captchaToken = await getCaptchaToken()
+  const result = await authStore.login(email.value, password.value, captchaToken)
 
   if (result.success) {
     await authStore.fetchOperator()

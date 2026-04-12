@@ -7,7 +7,9 @@
       >
         <template v-if="!rail">
           <div class="text-subtitle-1 font-weight-bold text-primary">Package Manager</div>
-          <div class="text-caption text-medium-emphasis">Configuration Tool</div>
+          <div class="font-weight-bold" :style="{ fontSize: '14px', color: authStore.environment === 'production' ? '#131a46' : '#fab4cd' }">
+            {{ authStore.environmentLabel }}
+          </div>
         </template>
       </v-list-item>
 

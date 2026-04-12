@@ -7,6 +7,7 @@ import 'vuetify/styles'
 import '@mdi/font/css/materialdesignicons.css'
 import './styles.css'
 
+import { VueReCaptcha } from 'vue-recaptcha-v3'
 import App from './App.vue'
 import router from './router'
 
@@ -30,4 +31,8 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 app.use(vuetify)
+app.use(VueReCaptcha, {
+  siteKey: '6Lf8ePMZAAAAAE54edpwoRp9M4tskUuwbm6DfIJN',
+  loaderOptions: { autoHideBadge: true },
+})
 app.mount('#app')

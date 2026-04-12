@@ -3,6 +3,8 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { loginApi, validateTokenApi, fetchOperatorApi, mfaChallengeApi } from '@/api/auth'
 import type { MfaChallengeResponse } from '@/api/auth'
+import { getEnvironment, setEnvironment, ENVIRONMENTS } from '@/api/client'
+import type { AppEnvironment } from '@/api/client'
 
 const TOKEN_KEY = 'operator_jwt_token'
 const READ_ONLY_KEY = 'pm_read_only'
@@ -12,8 +14,10 @@ export const useAuthStore = defineStore('auth', () => {
   const operator = ref<any>(null)
   const mfaPending = ref(false)
   const readOnly = ref(localStorage.getItem(READ_ONLY_KEY) === 'true')
+  const environment = ref<AppEnvironment>(getEnvironment())
 
   const isAuthenticated = computed(() => token.value !== null)
+  const environmentLabel = computed(() => ENVIRONMENTS[environment.value].label)
 
   function setReadOnly(value: boolean) {
     readOnly.value = value
@@ -32,9 +36,9 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem(TOKEN_KEY)
   }
 
-  async function login(email: string, password: string): Promise<{ success: boolean; mfa?: boolean; mfaData?: any; error?: string }> {
+  async function login(email: string, password: string, captchaToken?: string | null): Promise<{ success: boolean; mfa?: boolean; mfaData?: any; error?: string }> {
     try {
-      const response = await loginApi(email, password)
+      const response = await loginApi(email, password, captchaToken)
 
       if (response.login_handler === 'MFA') {
         setToken(response.data.token)
@@ -85,6 +89,13 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  function switchEnvironment(env: AppEnvironment) {
+    if (env === environment.value) return
+    clearToken()
+    setEnvironment(env)
+    environment.value = env
+  }
+
   function logout() {
     clearToken()
     window.location.href = '/login'
@@ -95,7 +106,9 @@ export const useAuthStore = defineStore('auth', () => {
     operator,
     mfaPending,
     readOnly,
+    environment,
     isAuthenticated,
+    environmentLabel,
     login,
     submitMfaCode,
     validateToken,
@@ -104,5 +117,6 @@ export const useAuthStore = defineStore('auth', () => {
     clearToken,
     setToken,
     setReadOnly,
+    switchEnvironment,
   }
 })
