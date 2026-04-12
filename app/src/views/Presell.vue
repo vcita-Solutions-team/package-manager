@@ -140,6 +140,12 @@
                 <v-icon size="x-small">{{ domainDiff.domain.icon }}</v-icon>
               </v-avatar>
               <span class="text-subtitle-2 font-weight-bold">{{ domainDiff.domain.name }}</span>
+              <v-tooltip v-if="domainDescriptions[domainDiff.domain.name]" location="end">
+                <template #activator="{ props }">
+                  <v-icon v-bind="props" size="x-small" class="ml-1" color="medium-emphasis">mdi-information-outline</v-icon>
+                </template>
+                {{ domainDescriptions[domainDiff.domain.name] }}
+              </v-tooltip>
             </div>
             <div class="comparison-table-wrapper">
               <v-table density="compact" class="comparison-table" :style="tableWidthStyle">
@@ -151,6 +157,12 @@
                   <tr v-for="row in domainDiff.features" :key="row.featureKey">
                     <td class="sticky-col">
                       <span class="font-weight-medium">{{ row.name }}</span>
+                      <v-tooltip v-if="featureDescriptions[row.name]" location="end" content-class="presell-tooltip">
+                        <template #activator="{ props }">
+                          <v-icon v-bind="props" size="x-small" class="ml-1" color="medium-emphasis">mdi-information-outline</v-icon>
+                        </template>
+                        {{ featureDescriptions[row.name] }}
+                      </v-tooltip>
                     </td>
                     <td v-for="pkg in selectedPackages" :key="pkg.id" class="text-center">
                       <div class="d-flex align-center justify-center" style="gap: 4px;">
@@ -758,6 +770,17 @@ const comparisonDomains = computed<ComparisonDomain[]>(() => {
     .sort((a, b) => a._order - b._order)
 })
 
+// --- Presell-specific ---
+const domainDescriptions: Record<string, string> = {
+  'Client Management': 'Includes: Inbox and Chat, Caller ID, Follow up reminders, import/export',
+}
+
+const featureDescriptions: Record<string, string> = {
+  'Basic Scheduling': 'Includes: Secure client portal, Email notifications & reminders, Business Page &\nWebsite widgets, Business calendar, Date specific availability settings, Multi-service booking',
+  'Payment Module': 'Includes: Record offline payments, Payment reminders (emails), Products',
+  'Marketing Module': 'Includes: Bulk email announcement, Scheduled campaigns (newsletter)',
+}
+
 // --- Presell-specific: split features vs apps ---
 const featureDomains = computed(() => comparisonDomains.value.filter((d) => d.domain.id !== 'apps'))
 const appsDomain = computed(() => comparisonDomains.value.find((d) => d.domain.id === 'apps') ?? null)
@@ -989,5 +1012,11 @@ onMounted(async () => {
 .section-title:hover {
   background-color: rgba(0, 0, 0, 0.03);
   border-radius: 4px;
+}
+</style>
+
+<style>
+.presell-tooltip {
+  white-space: pre-line;
 }
 </style>
