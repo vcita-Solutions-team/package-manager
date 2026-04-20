@@ -244,7 +244,7 @@ function onClone(pkg: Package) {
 
 onMounted(async () => {
   try {
-    await packageStore.loadPackages(true)
+    await packageStore.ensureLoaded()
   } catch (err: any) {
     loadError.value = err?.response?.data?.message || err?.message || 'Failed to load packages'
   }

@@ -21,7 +21,7 @@ const layouts: Record<string, any> = {
 }
 
 const layout = computed(() => {
-  const name = (route.meta.layout as string) || 'default'
-  return layouts[name] || DefaultLayout
+  const key = (route.meta.layout as string) || 'default'
+  return layouts[key] || DefaultLayout
 })
 </script>

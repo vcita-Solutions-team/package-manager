@@ -36,11 +36,6 @@ export const domainFeatureFFMappingRaw: DomainFeatureFFMapping = {
       "api"
     ]
   },
-  "License": {
-    "Thryv - External New Staff URL": [
-      "external_new_staff_url"
-    ]
-  },
   "AI": {
     "AI Chat": [
       "bizai_chat"
@@ -53,6 +48,9 @@ export const domainFeatureFFMappingRaw: DomainFeatureFFMapping = {
     ],
     "CS Recommendations": [
       "bizai_cs_recommendations"
+    ],
+    "AI Business Rules": [
+      "pkg.ai.business_rules"
     ]
   },
   "Client Management": {
@@ -255,6 +253,12 @@ export const domainFeatureFFMappingRaw: DomainFeatureFFMapping = {
     ],
     "vcita - Backoffice Branding": [
       "backoffice_branding"
+    ],
+    "Thryv - Websites": [
+      "websites_enabled"
+    ],
+    "Thryv - External New Staff URL": [
+      "external_new_staff_url"
     ]
   },
   "Trial \\ Spam prevention": {
@@ -289,9 +293,6 @@ export const domainFeatureFFMappingRaw: DomainFeatureFFMapping = {
     ],
     "Free Features": [
       "free_features"
-    ],
-    "Thryv - websites_enabled": [
-      "websites_enabled"
     ],
     "Thryv - command_center": [
       "command_center"
@@ -357,17 +358,18 @@ export const featureDescriptions: Record<string, string> = {
   unlimited_seats: 'Disable bottom action bar in staff management page',
   emailsignature_include_in_plan: 'For App Email signature builder',
   conversiontracking_include_in_plan: 'Google Analytics app in the App Market (without this ff the user will see upgrade banner)',
-  appquickbooks_include_in_plan: '',
+  appquickbooks_include_in_plan: 'Quickbooks application in the App Market (without this ff the user will see upgrade banner)',
   appadvancecampaigneditor_include_in_plan: 'Pro campaign editor app in the App Market (without this ff the user will see upgrade banner)',
   callsandtexting_include_in_plan: 'The calls and texting app is available to purchase and install on the App market.',
   pickmycallfree_include_in_plan: 'Control the availability of the "pickmycallfree" app in the app market for specific subscription packages.',
   googlereserve_include_in_plan: 'Include Google Reserve in plan',
   api: 'Allow integration with Zapier and Quickbooks',
-  external_new_staff_url: '',
+  external_new_staff_url: 'Enables external new staff url configuration per directory (used by Thryv)',
   bizai_chat: 'Controls the activation of the BizAi Business Assistance chat',
   bizai_smart_reply: 'Enables a content generator for user message replies during conversations',
   'pkg.ai.smart_reply_advanced': 'Advanced smart reply with precalculated responses for direct premium businesses',
   bizai_cs_recommendations: 'Activates the AI recommendation feature, which displays actionable client-facing next steps (generate estimate, schedule appointment)',
+  'pkg.ai.business_rules': 'Allows businesses to define and manage AI business rules that guide BizAI responses (tone, policies, FAQ, things to avoid)',
   unlimited_clients: 'Allow breaching Client Quota, use client quota if this is not added to the package',
   'pkg.business_administration.email_templates': 'Allow access to the email templates page and settings.',
   cliche_client_features: 'Allow meeting follow up',
@@ -379,7 +381,7 @@ export const featureDescriptions: Record<string, string> = {
   enable_reviews_auto_publishing: 'Controls access to the Auto-Campaign preset for reviews',
   documents_enabled: 'Enable use of documents module',
   'pkg.documents.promote': 'Displays the Documents menu item to users without access and invites them to upgrade',
-  client_portal_credit_cards: '',
+  client_portal_credit_cards: 'ff will show "my credit/debit cards" setting in "my account" in Client Portal',
   scheduling_features: 'SMS booking confirmation, scheduling notice, auto follow up hours, meeting auto response,  charge type, reminders, client card fields no multiline. if this feature is not on there is only in test quota for online scheduling',
   single_service_booking: 'Allow exposing only one service for online booking (in the client portal)',
   '3_services_limitation': '3 service limitation per account. A user will not be able to create more than 3 services.',
@@ -407,7 +409,7 @@ export const featureDescriptions: Record<string, string> = {
   estimates_monthly_unlimited: 'Unlimited Estimates if no quota was defined.  Make sure estimate quota was defined if this was not added to the package',
   save_cards: 'Card on file (vault) - save client credit card info for future payments',
   online_payment: 'Allow clients to pay using client portal, enable Payou form',
-  scheduled_payments: '',
+  scheduled_payments: 'Recurring payment feature- adds a new quick action for recurring payments. Allowing the business to create recurring payment plans/ currently (jan24) available for vcita payments & stripe gateways',
   pdf_customization: 'Invoices templates customization',
   booking_packages: 'Track and manage package offers. Sell future visits, sessions and services in bulk (payments sub feature)',
   coupons: 'Allow adding coupons',
@@ -422,7 +424,7 @@ export const featureDescriptions: Record<string, string> = {
   dedicated_promotional_number: 'Feature will assign a dedicated nexmo number for promotional campaigns',
   bye_zipwip: 'migrate zipwip to twilio',
   disable_messages_notifications: 'disable sending and setting "messages" notifications',
-  mute: '',
+  mute: 'Mutes the account from sending and receiving emails (both emails to business and clients)',
   marketing_module: 'To enable the restriction, it\'s required to *remove* marketing_module feature flag from the relevant plan',
   'pkg.marketing.promote': 'Displays the Marketing menu item to users without access and invites them to upgrade',
   campaign_recipients_monthly_unlimited: 'Unlimited Campaign recipient if no monthly quota was defined. Make sure Campaign recipient quota was defined if this was not added to the package',
@@ -430,7 +432,7 @@ export const featureDescriptions: Record<string, string> = {
   activate_automatic_campaigns: 'Allow business to activate an automatic campaign, without it there is no automatic campaign to the business but it will be displayed in UI for upsell',
   create_delete_automatic_campaigns: 'Allow business to create or delete Automatic campaign',
   pro_campaigns: 'Pro campaigns app',
-  send_pro_campaigns: '',
+  send_pro_campaigns: 'Send pro campaigns',
   ace_add_on: 'Enable ACE as Add-on',
   multistaff_features: 'Allow adding staff',
   joint_availability: 'Client can see availability for all staff (Allow checking the joint availaibility checkbox)',
@@ -463,7 +465,7 @@ export const featureDescriptions: Record<string, string> = {
   free_features: 'Privilege to turn on reminder in cliche, email signature in vCita, Allow business to mark message as read/unread',
 
 
-  websites_enabled: 'Presents \'websites\' button under online presence. Used to hide website in partners like DUDA that have a competitive solution to website.',
+  websites_enabled: 'Presents \'websites\' button under online presence (For Thryv only)',
   command_center: 'Thryv only - for command center usage (hides inbox, hides SMS settings etc)',
   basic_white_label: 'Used in Admin form , set the account to manual type if the flag exists and it is white label or direcroty admin',
   soci: 'Add social content platform (For Thryv only)',
@@ -473,9 +475,9 @@ export const featureDescriptions: Record<string, string> = {
   review_publishing: 'Allow publishing review using Yext in the live site (For Thryv only)',
   thryv_pay: 'Gives (any) user access to ThryvPay and Scheduled Payments under Sales (if payments enabled)',
   ThryvPay_wizards: 'Thryv pay for \'Core wizard\' and \'Payments wizard\'',
-  'pkg.thryv.referral_widget': '',
-  yextApp_include_in_plan: '',
-  monowebbuilder_include_in_plan: '',
+  'pkg.thryv.referral_widget': 'Enable Thryv referral widget button at the top bar',
+  yextApp_include_in_plan: 'Yext App (non Thryv accounts)',
+  monowebbuilder_include_in_plan: 'Mono web builder (FCR\'s appliction)',
   '2way_call_connect': 'Will turn on the “connect call” feature, when a client tries to call the 2way SMS number',
   campaigns_library: 'Open campaign suggestion from verti for both automatic campaigns and announcements',
   campaign_category_type: 'specify if the categories controller should pass entity_type to the categories API',

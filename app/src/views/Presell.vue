@@ -1,298 +1,300 @@
 <template>
-  <v-container fluid class="pa-6">
-    <v-alert
-      v-if="loadError || packageStore.error"
-      type="error"
-      variant="tonal"
-      class="mb-4"
-      closable
-      @click:close="loadError = ''"
-    >
-      {{ loadError || packageStore.error }}
-    </v-alert>
+  <div class="page-shell">
+    <div class="page-fixed pa-6 pb-0">
+      <v-alert
+        v-if="loadError || packageStore.error"
+        type="error"
+        variant="tonal"
+        class="mb-4"
+        closable
+        @click:close="loadError = ''"
+      >
+        {{ loadError || packageStore.error }}
+      </v-alert>
 
-    <!-- Loading state: wait for full enrichment before showing data -->
-    <div v-if="!ready" class="text-center py-16">
-      <v-progress-circular indeterminate color="primary" size="48" class="mb-4" />
-      <p class="text-body-2 text-medium-emphasis">Loading presell packages…</p>
+      <!-- Loading state: wait for full enrichment before showing data -->
+      <div v-if="!ready" class="text-center py-16">
+        <v-progress-circular indeterminate color="primary" size="48" class="mb-4" />
+        <p class="text-body-2 text-medium-emphasis">Loading presell packages…</p>
+      </div>
+
+      <template v-else-if="selectedPackages.length >= 2">
+        <!-- Toolbar -->
+        <div class="d-flex align-center justify-end mb-4">
+          <v-btn
+            size="small"
+            variant="tonal"
+            prepend-icon="mdi-download"
+            @click="exportCsv"
+          >
+            Export CSV
+          </v-btn>
+        </div>
+
+        <!-- Search -->
+        <v-text-field
+          v-model="featureSearchText"
+          label="Search features, settings, quotas..."
+          variant="outlined"
+          density="compact"
+          hide-details
+          clearable
+          prepend-inner-icon="mdi-magnify"
+        />
+      </template>
     </div>
 
-    <template v-else-if="selectedPackages.length >= 2">
-      <!-- Toolbar -->
-      <div class="d-flex align-center justify-end mb-4">
-        <v-btn
-          size="small"
-          variant="tonal"
-          prepend-icon="mdi-download"
-          @click="exportCsv"
-        >
-          Export CSV
-        </v-btn>
-      </div>
-
-      <!-- Search -->
-      <v-text-field
-        v-model="featureSearchText"
-        label="Search features, settings, quotas..."
-        variant="outlined"
-        density="compact"
-        hide-details
-        clearable
-        prepend-inner-icon="mdi-magnify"
-        class="mb-4"
-      />
-
-      <!-- Package names header -->
-      <div class="comparison-table-wrapper mb-4">
-        <v-table density="compact" class="comparison-table presell-header-table" :style="tableWidthStyle">
-          <colgroup>
-            <col class="label-col" />
-            <col v-for="pkg in selectedPackages" :key="pkg.id" :style="pkgColStyle" />
-          </colgroup>
-          <tbody>
-            <tr>
-              <td class="sticky-col"></td>
-              <td v-for="pkg in selectedPackages" :key="pkg.id" class="text-center">
-                <span class="text-h6 font-weight-bold">{{ pkg.display_name }}</span>
-              </td>
-            </tr>
-          </tbody>
-        </v-table>
-      </div>
-
-      <!-- Settings -->
-      <v-card v-if="!isSearchActive || filteredSettingsRows.length" variant="flat" class="border rounded-lg mb-4">
-        <v-card-title
-          class="text-subtitle-1 font-weight-bold d-flex align-center section-title"
-          @click="collapsed.settings = !collapsed.settings"
-        >
-          <v-icon class="mr-2" size="small">mdi-cog-outline</v-icon>
-          Settings
-          <v-spacer />
-          <v-icon size="small">{{ collapsed.settings ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
-        </v-card-title>
-        <div v-show="!collapsed.settings || isSearchActive" class="comparison-table-wrapper">
-          <v-table density="compact" class="comparison-table" :style="tableWidthStyle">
+    <div v-if="ready && selectedPackages.length >= 2" class="page-scroll">
+      <div class="scroll-content pb-6" :style="{ minWidth: tableWidthStyle.width }">
+        <!-- Sticky package names header -->
+        <div class="pkg-header-sticky px-6 pt-4">
+          <table class="comparison-table" style="width: 100%">
             <colgroup>
               <col class="label-col" />
               <col v-for="pkg in selectedPackages" :key="pkg.id" :style="pkgColStyle" />
             </colgroup>
             <tbody>
-              <tr v-for="row in filteredSettingsRows" :key="row.key">
-                <td class="sticky-col font-weight-medium">{{ row.label }}</td>
-                <td v-for="pkg in selectedPackages" :key="pkg.id" class="text-center">
-                  <v-icon
-                    size="small"
-                    :color="row.values[pkg.id] ? 'success' : 'grey-lighten-1'"
-                    :icon="row.values[pkg.id] ? 'mdi-check-circle' : 'mdi-close-circle'"
-                  />
+              <tr>
+                <td class="sticky-col"></td>
+                <td v-for="pkg in selectedPackages" :key="pkg.id" class="text-center pkg-name-cell">
+                  <span class="text-h6 font-weight-bold">{{ pkg.display_name }}</span>
                 </td>
               </tr>
             </tbody>
-          </v-table>
+          </table>
         </div>
-      </v-card>
 
-      <!-- Quotas -->
-      <v-card v-if="!isSearchActive || filteredQuotaRows.length" variant="flat" class="border rounded-lg mb-4">
-        <v-card-title
-          class="text-subtitle-1 font-weight-bold d-flex align-center section-title"
-          @click="collapsed.quotas = !collapsed.quotas"
-        >
-          <v-icon class="mr-2" size="small">mdi-counter</v-icon>
-          Quotas
-          <v-spacer />
-          <v-icon size="small">{{ collapsed.quotas ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
-        </v-card-title>
-        <div v-show="!collapsed.quotas || isSearchActive" class="comparison-table-wrapper">
-          <v-table density="compact" class="comparison-table" :style="tableWidthStyle">
-            <colgroup>
-              <col class="label-col" />
-              <col v-for="pkg in selectedPackages" :key="pkg.id" :style="pkgColStyle" />
-            </colgroup>
-            <tbody>
-              <tr v-for="q in filteredQuotaRows" :key="q.key">
-                <td class="sticky-col font-weight-medium">{{ q.label }}</td>
-                <td v-for="pkg in selectedPackages" :key="pkg.id" class="text-center">
-                  {{ q.values[pkg.id] }}
-                </td>
-              </tr>
-            </tbody>
-          </v-table>
-        </div>
-      </v-card>
-
-      <!-- Features (excluding Apps) -->
-      <v-card v-if="!isSearchActive || filteredFeatureDomains.length" variant="flat" class="border rounded-lg mb-4">
-        <v-card-title
-          class="text-subtitle-1 font-weight-bold d-flex align-center section-title"
-          @click="collapsed.features = !collapsed.features"
-        >
-          <v-icon class="mr-2" size="small">mdi-format-list-checks</v-icon>
-          Features
-          <v-spacer />
-          <v-icon size="small">{{ collapsed.features ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
-        </v-card-title>
-        <v-card-text v-show="!collapsed.features || isSearchActive" class="pa-0">
-          <div v-for="domainDiff in filteredFeatureDomains" :key="domainDiff.domain.id" class="mb-2">
-            <div class="d-flex align-center pa-4 pb-2">
-              <v-avatar :color="domainDiff.domain.color" variant="tonal" size="28" class="mr-2">
-                <v-icon size="x-small">{{ domainDiff.domain.icon }}</v-icon>
-              </v-avatar>
-              <span class="text-subtitle-2 font-weight-bold">{{ domainDiff.domain.name }}</span>
-              <v-tooltip v-if="domainDescriptions[domainDiff.domain.name]" location="end">
-                <template #activator="{ props }">
-                  <v-icon v-bind="props" size="x-small" class="ml-1" color="medium-emphasis">mdi-information-outline</v-icon>
-                </template>
-                {{ domainDescriptions[domainDiff.domain.name] }}
-              </v-tooltip>
-            </div>
-            <div class="comparison-table-wrapper">
-              <v-table density="compact" class="comparison-table" :style="tableWidthStyle">
+        <div class="px-6">
+          <!-- Settings -->
+          <v-card v-if="!isSearchActive || filteredSettingsRows.length" variant="flat" class="border rounded-lg mb-4">
+            <v-card-title
+              class="text-subtitle-1 font-weight-bold d-flex align-center section-title"
+              @click="collapsed.settings = !collapsed.settings"
+            >
+              <v-icon class="mr-2" size="small">mdi-cog-outline</v-icon>
+              Settings
+              <v-spacer />
+              <v-icon size="small">{{ collapsed.settings ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
+            </v-card-title>
+            <div v-show="!collapsed.settings || isSearchActive">
+              <table class="comparison-table" style="width: 100%">
                 <colgroup>
                   <col class="label-col" />
                   <col v-for="pkg in selectedPackages" :key="pkg.id" :style="pkgColStyle" />
                 </colgroup>
                 <tbody>
-                  <tr v-for="row in domainDiff.features" :key="row.featureKey">
-                    <td class="sticky-col">
-                      <span class="font-weight-medium">{{ row.name }}</span>
-                      <v-tooltip v-if="featureDescriptions[row.name]" location="end" content-class="presell-tooltip">
-                        <template #activator="{ props }">
-                          <v-icon v-bind="props" size="x-small" class="ml-1" color="medium-emphasis">mdi-information-outline</v-icon>
-                        </template>
-                        {{ featureDescriptions[row.name] }}
-                      </v-tooltip>
-                    </td>
+                  <tr v-for="row in filteredSettingsRows" :key="row.key">
+                    <td class="sticky-col font-weight-medium">{{ row.label }}</td>
                     <td v-for="pkg in selectedPackages" :key="pkg.id" class="text-center">
-                      <div class="d-flex align-center justify-center" style="gap: 4px;">
-                        <template v-if="row.perPackage[pkg.id]">
-                          <v-chip
-                            v-if="row.perPackage[pkg.id].stateLabel"
-                            size="x-small"
-                            :color="row.perPackage[pkg.id].stateColor || 'info'"
-                            variant="flat"
-                          >{{ row.perPackage[pkg.id].stateLabel }}</v-chip>
-                          <template v-else>
-                            <v-icon
-                              v-if="row.perPackage[pkg.id].denyIcon"
-                              color="warning" size="small"
-                            >mdi-eye-off</v-icon>
-                            <v-icon v-else color="success" size="small">mdi-check-circle</v-icon>
-                          </template>
-                        </template>
-                        <v-icon v-else color="grey-lighten-2" size="small">mdi-close-circle-outline</v-icon>
-                      </div>
+                      <v-icon
+                        size="small"
+                        :color="row.values[pkg.id] ? 'success' : 'grey-lighten-1'"
+                        :icon="row.values[pkg.id] ? 'mdi-check-circle' : 'mdi-close-circle'"
+                      />
                     </td>
                   </tr>
                 </tbody>
-              </v-table>
+              </table>
             </div>
-          </div>
-        </v-card-text>
-      </v-card>
+          </v-card>
 
-      <!-- Bundles and Apps -->
-      <v-card v-if="!isSearchActive || filteredBundleRows.length || filteredAppsDomain" variant="flat" class="border rounded-lg mb-4">
-        <v-card-title
-          class="text-subtitle-1 font-weight-bold d-flex align-center section-title"
-          @click="collapsed.bundles = !collapsed.bundles"
-        >
-          <v-icon class="mr-2" size="small">mdi-package-variant-closed</v-icon>
-          Bundles and Apps
-          <v-spacer />
-          <v-icon size="small">{{ collapsed.bundles ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
-        </v-card-title>
-        <div v-show="!collapsed.bundles || isSearchActive">
-          <div v-if="filteredBundleRows.length" class="comparison-table-wrapper">
-            <v-table density="compact" class="comparison-table" :style="tableWidthStyle">
-              <colgroup>
-                <col class="label-col" />
-                <col v-for="pkg in selectedPackages" :key="pkg.id" :style="pkgColStyle" />
-              </colgroup>
-              <tbody>
-                <tr v-for="row in filteredBundleRows" :key="row.key">
-                  <td class="sticky-col font-weight-medium">{{ row.label }}</td>
-                  <td v-for="pkg in selectedPackages" :key="pkg.id" class="text-center">
-                    {{ row.values[pkg.id] }}
-                  </td>
-                </tr>
-              </tbody>
-            </v-table>
-          </div>
-          <template v-if="filteredAppsDomain">
-            <div class="d-flex align-center pa-4 pb-2 pt-4">
-              <v-avatar :color="filteredAppsDomain.domain.color" variant="tonal" size="28" class="mr-2">
-                <v-icon size="x-small">{{ filteredAppsDomain.domain.icon }}</v-icon>
-              </v-avatar>
-              <span class="text-subtitle-2 font-weight-bold">{{ filteredAppsDomain.domain.name }}</span>
-            </div>
-            <div class="comparison-table-wrapper">
-              <v-table density="compact" class="comparison-table" :style="tableWidthStyle">
+          <!-- Quotas -->
+          <v-card v-if="!isSearchActive || filteredQuotaRows.length" variant="flat" class="border rounded-lg mb-4">
+            <v-card-title
+              class="text-subtitle-1 font-weight-bold d-flex align-center section-title"
+              @click="collapsed.quotas = !collapsed.quotas"
+            >
+              <v-icon class="mr-2" size="small">mdi-counter</v-icon>
+              Quotas
+              <v-spacer />
+              <v-icon size="small">{{ collapsed.quotas ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
+            </v-card-title>
+            <div v-show="!collapsed.quotas || isSearchActive">
+              <table class="comparison-table" style="width: 100%">
                 <colgroup>
                   <col class="label-col" />
                   <col v-for="pkg in selectedPackages" :key="pkg.id" :style="pkgColStyle" />
                 </colgroup>
                 <tbody>
-                  <tr v-for="row in filteredAppsDomain.features" :key="row.featureKey">
-                    <td class="sticky-col">
-                      <span class="font-weight-medium">{{ row.name }}</span>
-                    </td>
+                  <tr v-for="q in filteredQuotaRows" :key="q.key">
+                    <td class="sticky-col font-weight-medium">{{ q.label }}</td>
                     <td v-for="pkg in selectedPackages" :key="pkg.id" class="text-center">
-                      <div class="d-flex align-center justify-center" style="gap: 4px;">
-                        <template v-if="row.perPackage[pkg.id]">
-                          <v-chip
-                            v-if="row.perPackage[pkg.id].stateLabel"
-                            size="x-small"
-                            :color="row.perPackage[pkg.id].stateColor || 'info'"
-                            variant="flat"
-                          >{{ row.perPackage[pkg.id].stateLabel }}</v-chip>
-                          <template v-else>
-                            <v-icon
-                              v-if="row.perPackage[pkg.id].denyIcon"
-                              color="warning" size="small"
-                            >mdi-eye-off</v-icon>
-                            <v-icon v-else color="success" size="small">mdi-check-circle</v-icon>
-                          </template>
-                        </template>
-                        <v-icon v-else color="grey-lighten-2" size="small">mdi-close-circle-outline</v-icon>
-                      </div>
+                      {{ q.values[pkg.id] }}
                     </td>
                   </tr>
                 </tbody>
-              </v-table>
+              </table>
             </div>
-          </template>
-        </div>
-      </v-card>
+          </v-card>
 
-      <!-- No search results -->
-      <v-card
-        v-if="isSearchActive && !hasAnySearchResults"
-        variant="flat"
-        class="border rounded-lg pa-8 text-center"
-      >
-        <v-icon size="48" color="grey-lighten-1">mdi-magnify-close</v-icon>
-        <h3 class="text-subtitle-1 mt-3 mb-1">No results found</h3>
-        <p class="text-body-2 text-medium-emphasis">
-          No features, settings, or quotas match "{{ featureSearchText }}".
-        </p>
-      </v-card>
-    </template>
+          <!-- Features (excluding Apps) -->
+          <v-card v-if="!isSearchActive || filteredFeatureDomains.length" variant="flat" class="border rounded-lg mb-4">
+            <v-card-title
+              class="text-subtitle-1 font-weight-bold d-flex align-center section-title"
+              @click="collapsed.features = !collapsed.features"
+            >
+              <v-icon class="mr-2" size="small">mdi-format-list-checks</v-icon>
+              Features
+              <v-spacer />
+              <v-icon size="small">{{ collapsed.features ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
+            </v-card-title>
+            <v-card-text v-show="!collapsed.features || isSearchActive" class="pa-0">
+              <div v-for="domainDiff in filteredFeatureDomains" :key="domainDiff.domain.id" class="mb-2">
+                <div class="d-flex align-center pa-4 pb-2">
+                  <v-avatar :color="domainDiff.domain.color" variant="tonal" size="28" class="mr-2">
+                    <v-icon size="x-small">{{ domainDiff.domain.icon }}</v-icon>
+                  </v-avatar>
+                  <span class="text-subtitle-2 font-weight-bold">{{ domainDiff.domain.name }}</span>
+                  <v-tooltip v-if="domainDescriptions[domainDiff.domain.name]" location="end">
+                    <template #activator="{ props }">
+                      <v-icon v-bind="props" size="x-small" class="ml-1" color="medium-emphasis">mdi-information-outline</v-icon>
+                    </template>
+                    {{ domainDescriptions[domainDiff.domain.name] }}
+                  </v-tooltip>
+                </div>
+                <table class="comparison-table" style="width: 100%">
+                  <colgroup>
+                    <col class="label-col" />
+                    <col v-for="pkg in selectedPackages" :key="pkg.id" :style="pkgColStyle" />
+                  </colgroup>
+                  <tbody>
+                    <tr v-for="row in domainDiff.features" :key="row.featureKey">
+                      <td class="sticky-col">
+                        <span class="font-weight-medium">{{ row.name }}</span>
+                        <v-tooltip v-if="featureDescriptions[row.name]" location="end" content-class="presell-tooltip">
+                          <template #activator="{ props }">
+                            <v-icon v-bind="props" size="x-small" class="ml-1" color="medium-emphasis">mdi-information-outline</v-icon>
+                          </template>
+                          {{ featureDescriptions[row.name] }}
+                        </v-tooltip>
+                      </td>
+                      <td v-for="pkg in selectedPackages" :key="pkg.id" class="text-center">
+                        <div class="d-flex align-center justify-center" style="gap: 4px;">
+                          <template v-if="row.perPackage[pkg.id]">
+                            <v-chip
+                              v-if="row.perPackage[pkg.id].stateLabel"
+                              size="x-small"
+                              :color="row.perPackage[pkg.id].stateColor || 'info'"
+                              variant="flat"
+                            >{{ row.perPackage[pkg.id].stateLabel }}</v-chip>
+                            <template v-else>
+                              <v-icon
+                                v-if="row.perPackage[pkg.id].denyIcon"
+                                color="warning" size="small"
+                              >mdi-eye-off</v-icon>
+                              <v-icon v-else color="success" size="small">mdi-check-circle</v-icon>
+                            </template>
+                          </template>
+                          <v-icon v-else color="grey-lighten-2" size="small">mdi-close-circle-outline</v-icon>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </v-card-text>
+          </v-card>
+
+          <!-- Bundles and Apps -->
+          <v-card v-if="!isSearchActive || filteredBundleRows.length || filteredAppsDomain" variant="flat" class="border rounded-lg mb-4">
+            <v-card-title
+              class="text-subtitle-1 font-weight-bold d-flex align-center section-title"
+              @click="collapsed.bundles = !collapsed.bundles"
+            >
+              <v-icon class="mr-2" size="small">mdi-package-variant-closed</v-icon>
+              Bundles and Apps
+              <v-spacer />
+              <v-icon size="small">{{ collapsed.bundles ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
+            </v-card-title>
+            <div v-show="!collapsed.bundles || isSearchActive">
+              <table class="comparison-table" style="width: 100%">
+                <colgroup>
+                  <col class="label-col" />
+                  <col v-for="pkg in selectedPackages" :key="pkg.id" :style="pkgColStyle" />
+                </colgroup>
+                <tbody>
+                  <tr v-for="row in filteredBundleRows" :key="row.key">
+                    <td class="sticky-col font-weight-medium">{{ row.label }}</td>
+                    <td v-for="pkg in selectedPackages" :key="pkg.id" class="text-center">
+                      {{ row.values[pkg.id] }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <template v-if="filteredAppsDomain">
+                <div class="d-flex align-center pa-4 pb-2 pt-4">
+                  <v-avatar :color="filteredAppsDomain.domain.color" variant="tonal" size="28" class="mr-2">
+                    <v-icon size="x-small">{{ filteredAppsDomain.domain.icon }}</v-icon>
+                  </v-avatar>
+                  <span class="text-subtitle-2 font-weight-bold">{{ filteredAppsDomain.domain.name }}</span>
+                </div>
+                <table class="comparison-table" style="width: 100%">
+                  <colgroup>
+                    <col class="label-col" />
+                    <col v-for="pkg in selectedPackages" :key="pkg.id" :style="pkgColStyle" />
+                  </colgroup>
+                  <tbody>
+                    <tr v-for="row in filteredAppsDomain.features" :key="row.featureKey">
+                      <td class="sticky-col">
+                        <span class="font-weight-medium">{{ row.name }}</span>
+                      </td>
+                      <td v-for="pkg in selectedPackages" :key="pkg.id" class="text-center">
+                        <div class="d-flex align-center justify-center" style="gap: 4px;">
+                          <template v-if="row.perPackage[pkg.id]">
+                            <v-chip
+                              v-if="row.perPackage[pkg.id].stateLabel"
+                              size="x-small"
+                              :color="row.perPackage[pkg.id].stateColor || 'info'"
+                              variant="flat"
+                            >{{ row.perPackage[pkg.id].stateLabel }}</v-chip>
+                            <template v-else>
+                              <v-icon
+                                v-if="row.perPackage[pkg.id].denyIcon"
+                                color="warning" size="small"
+                              >mdi-eye-off</v-icon>
+                              <v-icon v-else color="success" size="small">mdi-check-circle</v-icon>
+                            </template>
+                          </template>
+                          <v-icon v-else color="grey-lighten-2" size="small">mdi-close-circle-outline</v-icon>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </template>
+            </div>
+          </v-card>
+
+          <!-- No search results -->
+          <v-card
+            v-if="isSearchActive && !hasAnySearchResults"
+            variant="flat"
+            class="border rounded-lg pa-8 text-center"
+          >
+            <v-icon size="48" color="grey-lighten-1">mdi-magnify-close</v-icon>
+            <h3 class="text-subtitle-1 mt-3 mb-1">No results found</h3>
+            <p class="text-body-2 text-medium-emphasis">
+              No features, settings, or quotas match "{{ featureSearchText }}".
+            </p>
+          </v-card>
+        </div>
+      </div>
+    </div>
 
     <!-- Empty state -->
-    <v-card
-      v-else
-      variant="flat"
-      class="border rounded-lg pa-12 text-center"
-    >
-      <v-icon size="80" color="grey-lighten-1">mdi-tag-multiple-outline</v-icon>
-      <h3 class="text-h6 mt-4 mb-2">No presell packages available</h3>
-      <p class="text-body-2 text-medium-emphasis">
-        Template packages need to be configured before they appear here.
-      </p>
-    </v-card>
-  </v-container>
+    <div v-if="ready && selectedPackages.length < 2" class="page-scroll pa-6 pt-4">
+      <v-card
+        variant="flat"
+        class="border rounded-lg pa-12 text-center"
+      >
+        <v-icon size="80" color="grey-lighten-1">mdi-tag-multiple-outline</v-icon>
+        <h3 class="text-h6 mt-4 mb-2">No presell packages available</h3>
+        <p class="text-body-2 text-medium-emphasis">
+          Template packages need to be configured before they appear here.
+        </p>
+      </v-card>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -300,7 +302,7 @@
  * This page reuses the exact same comparison logic as PackageComparison.vue
  * but auto-selects two hardcoded template packages instead of a user picker.
  */
-import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 import { usePackageStore } from '@/stores/packages'
 import { useFeatureStore } from '@/stores/features'
 import { domainFeatureFFMappingRaw } from '@/data/domainFeatureFFMapping'
@@ -930,6 +932,7 @@ const tableWidthStyle = computed(() => {
 })
 
 onMounted(async () => {
+  document.documentElement.classList.add('no-page-scroll')
   try {
     // Kick off full load in the background but don't wait for ALL packages to enrich
     packageStore.ensureLoaded().catch(() => {})
@@ -957,15 +960,52 @@ onMounted(async () => {
     ready.value = true
   }
 })
+
+onUnmounted(() => {
+  document.documentElement.classList.remove('no-page-scroll')
+})
 </script>
 
 <style scoped>
-.comparison-table-wrapper {
-  overflow-x: auto;
+.page-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 
+.page-fixed {
+  flex-shrink: 0;
+}
+
+.page-scroll {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+
+.scroll-content {
+  min-width: 100%;
+}
+
+/* Sticky package names header */
+.pkg-header-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgb(var(--v-theme-surface));
+  padding-bottom: 8px;
+}
+
+.pkg-name-cell {
+  vertical-align: middle;
+}
+
+/* Shared table styles */
 .comparison-table {
   table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 0.875rem;
 }
 
 .comparison-table .label-col {
@@ -980,32 +1020,20 @@ onMounted(async () => {
   width: 280px;
   min-width: 280px;
   max-width: 280px;
+  padding: 6px 16px;
 }
 
-.comparison-table .pkg-col {
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.comparison-table td,
-.comparison-table th {
+.comparison-table td {
   border-right: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  padding: 6px 16px;
 }
 
-.comparison-table td:last-child,
-.comparison-table th:last-child {
+.comparison-table td:last-child {
   border-right: none;
 }
 
-.presell-header-table {
-  border: none !important;
-}
-
-.presell-header-table td {
-  border-bottom: none !important;
-}
-
+/* Section cards */
 .section-title {
   cursor: pointer;
 }

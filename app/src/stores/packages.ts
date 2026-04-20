@@ -439,14 +439,24 @@ export const usePackageStore = defineStore('packages', () => {
       toNumberOrNull(raw?.sms_monthly_quota?.other)
 
     const normalizedId = String(
+      raw?.id ??
+      raw?._id ??
       source?.id ??
+      source?._id ??
       source?.package_id ??
       source?.packageId ??
-      raw?.id ??
       raw?.package_id ??
       raw?.packageId ??
       '',
     )
+
+    const candidateIds = [
+      normalizedId,
+      ...[
+        raw?.id, raw?._id, source?.id, source?._id,
+        raw?.package_id, raw?.packageId, source?.package_id, source?.packageId,
+      ].map((v) => (v != null ? String(v) : '')),
+    ].filter((v) => v && v !== 'undefined' && v !== 'null')
 
     const resolvedName = pickBestName(
       [
@@ -492,8 +502,8 @@ export const usePackageStore = defineStore('packages', () => {
       display_name: resolvedDisplayName,
       staff_slots: staffSlots,
       free: toBoolean(source?.free ?? source?.is_free ?? raw?.free ?? raw?.is_free, false),
-      deprecated: isDeprecated(normalizedId),
-      is_template: isTemplate(normalizedId),
+      deprecated: candidateIds.some((cid) => isDeprecated(cid)),
+      is_template: candidateIds.some((cid) => isTemplate(cid)),
       created_at: pickDate(source?.created_at, source?.createdAt, raw?.created_at, raw?.createdAt),
       updated_at: pickDate(source?.updated_at, source?.updatedAt, raw?.updated_at, raw?.updatedAt),
       settings: {
@@ -522,47 +532,17 @@ export const usePackageStore = defineStore('packages', () => {
     }
   }
 
-  async function loadPackages(force = false) {
-    if (loading.value) return
-    if (initialized.value && !force) return
+  const enrichedIds = ref<Set<string>>(new Set())
 
+  async function loadPackages() {
+    if (loading.value) return
     loading.value = true
     error.value = null
     try {
       const result = await listPackagesApi()
       const normalized = result.map(normalizePackage).filter((p) => p.id)
-
-      // Make list data available immediately so navigation to detail pages works.
       packages.value = normalized
       initialized.value = true
-
-      // Enrich with full details in the background (settings/quotas/flags may be incomplete in list endpoint).
-      const detailIds = normalized.map((p) => p.id).filter(Boolean)
-      const BATCH_SIZE = 4
-      for (let i = 0; i < detailIds.length; i += BATCH_SIZE) {
-        const batch = detailIds.slice(i, i + BATCH_SIZE)
-        await Promise.all(
-          batch.map(async (id) => {
-            try {
-              const details = normalizePackage(await getPackageApi(id))
-              const idx = packages.value.findIndex((p) => p.id === id)
-              if (idx !== -1) {
-                packages.value[idx] = {
-                  ...packages.value[idx],
-                  updated_at: details.updated_at || packages.value[idx].updated_at,
-                  created_at: details.created_at || packages.value[idx].created_at,
-                  features: details.features.length > 0 ? details.features : packages.value[idx].features,
-                  settings: details.settings,
-                  quotas: details.quotas,
-                  staff_slots: details.staff_slots ?? packages.value[idx].staff_slots,
-                }
-              }
-            } catch {
-              // Keep list payload values if detail fetch fails for this package.
-            }
-          }),
-        )
-      }
     } catch (err: any) {
       error.value = err?.response?.data?.message || err?.message || 'Failed to load packages'
       throw err
@@ -579,13 +559,14 @@ export const usePackageStore = defineStore('packages', () => {
   async function loadPackageById(id: string, force = false) {
     if (!id) return null
     const existing = packages.value.find((p) => p.id === id)
-    if (existing && !force) return existing
+    if (existing && !force && enrichedIds.value.has(id)) return existing
 
     loading.value = true
     error.value = null
     try {
       const detailed = normalizePackage(await getPackageApi(id))
       const normalizedId = detailed.id || id
+      enrichedIds.value.add(normalizedId)
       const existingPkg = packages.value.find((p) => p.id === normalizedId)
       const mergedName =
         detailed.name && !isIdLikeName(detailed.name, normalizedId)
@@ -642,7 +623,8 @@ export const usePackageStore = defineStore('packages', () => {
       result = result.filter(
         (p) =>
           p.display_name.toLowerCase().includes(q) ||
-          p.name.toLowerCase().includes(q),
+          p.name.toLowerCase().includes(q) ||
+          p.features.some((f) => f.toLowerCase().includes(q)),
       )
     }
 
@@ -665,7 +647,8 @@ export const usePackageStore = defineStore('packages', () => {
       result = result.filter(
         (p) =>
           p.display_name.toLowerCase().includes(q) ||
-          p.name.toLowerCase().includes(q),
+          p.name.toLowerCase().includes(q) ||
+          p.features.some((f) => f.toLowerCase().includes(q)),
       )
     }
 
@@ -796,6 +779,7 @@ export const usePackageStore = defineStore('packages', () => {
     auditEntries,
     loading,
     initialized,
+    enrichedIds,
     error,
     searchQuery,
     filterFeature,

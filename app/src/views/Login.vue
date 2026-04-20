@@ -136,12 +136,14 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+
 import { ENVIRONMENTS } from '@/api/client'
 import type { AppEnvironment } from '@/api/client'
 import { useReCaptcha } from 'vue-recaptcha-v3'
 
 const router = useRouter()
 const authStore = useAuthStore()
+
 const { executeRecaptcha, recaptchaLoaded } = useReCaptcha()!
 
 const envOptions = Object.entries(ENVIRONMENTS).map(([value, { label }]) => ({ value, label }))
@@ -205,8 +207,8 @@ async function onLogin() {
   const result = await authStore.login(email.value, password.value, captchaToken)
 
   if (result.success) {
-    await authStore.fetchOperator()
-    router.replace('/')
+    window.location.href = '/'
+    return
   } else if (result.mfa) {
     formMode.value = 'mfa'
     if (result.mfaData) {
@@ -228,8 +230,8 @@ async function onMfaSubmit() {
   const result = await authStore.submitMfaCode(mfaCode.value)
 
   if (result.success) {
-    await authStore.fetchOperator()
-    router.replace('/')
+    window.location.href = '/'
+    return
   } else {
     errorMessage.value = result.error || 'Verification failed'
   }

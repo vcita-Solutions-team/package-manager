@@ -148,8 +148,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { usePackageStore } from '@/stores/packages'
 
 const authStore = useAuthStore()
+const packageStore = usePackageStore()
 const route = useRoute()
 const drawer = ref(true)
 const rail = ref(false)
@@ -157,6 +159,9 @@ const rail = ref(false)
 onMounted(async () => {
   if (authStore.isAuthenticated && !authStore.operator) {
     await authStore.fetchOperator()
+  }
+  if (authStore.isAuthenticated) {
+    packageStore.ensureLoaded().catch(() => {})
   }
 })
 

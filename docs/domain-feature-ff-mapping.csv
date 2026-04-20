@@ -2,19 +2,19 @@ domain,feature,ff,description
 Bundles,Unlimited Seats,unlimited_seats,Disable bottom action bar in staff management page
 Bundles,Email Signature,emailsignature_include_in_plan,For App Email signature builder
 Bundles,Google Analytics,conversiontracking_include_in_plan,Google Analytics app in the App Market (without this ff the user will see upgrade banner)
-Bundles,QuickBooks,appquickbooks_include_in_plan,
+Bundles,QuickBooks,appquickbooks_include_in_plan,Quickbooks application in the App Market (without this ff the user will see upgrade banner)
 Bundles,Pro Campaign Editor,appadvancecampaigneditor_include_in_plan,Pro campaign editor app in the App Market (without this ff the user will see upgrade banner)
-Bundles,Calls & Texting,callsandtexting_include_in_plan,The calls and texting app is available to purchase and install on the App market.
-Bundles,AI Receptionist (vcita \ TPG),pickmycallfree_include_in_plan,"Control the availability of the ""pickmycallfree"" app in the app market for specific subscription packages."
+Bundles,Calls & Texting,callsandtexting_include_in_plan,The calls and texting app is available to purchase and install on the App market
+Bundles,AI Receptionist (vcita \ TPG),pickmycallfree_include_in_plan,"Control the availability of the ""pickmycallfree"" app in the app market for specific subscription packages"
 Bundles,Reserve with Google,googlereserve_include_in_plan,Include Google Reserve in plan
 Bundles,Zapier,api,Allow integration with Zapier and Quickbooks
-License,Thryv - External New Staff URL,external_new_staff_url,
 AI,AI Chat,bizai_chat,Controls the activation of the BizAi Business Assistance chat
 AI,AI Smart Reply,bizai_smart_reply,Enables a content generator for user message replies during conversations
 AI,Smart Reply Advanced,pkg.ai.smart_reply_advanced,Advanced smart reply with precalculated responses for direct premium businesses
 AI,CS Recommendations,bizai_cs_recommendations,"Activates the AI recommendation feature, which displays actionable client-facing next steps (generate estimate, schedule appointment)"
+AI,AI Business Rules,pkg.ai.business_rules,"Allows businesses to define and manage AI business rules that guide BizAI responses (tone, policies, FAQ, things to avoid)"
 Client Management,# of clients,unlimited_clients,"Allow breaching Client Quota, use client quota if this is not added to the package"
-Client Management,Email Templates Customization,pkg.business_administration.email_templates,Allow access to the email templates page and settings.
+Client Management,Email Templates Customization,pkg.business_administration.email_templates,Allow access to the email templates page and settings
 Client Management,Email Templates Customization,cliche_client_features,Allow meeting follow up
 Client Management,Email Templates Customization,cliche_all_features,Allow editing all transactional emails (including staff)
 Client Management,Custom Client Statuses,enable_client_status_customization,"Allows status name changes:Allow status name changes, the addition of custom statuses and client status automation"
@@ -24,10 +24,10 @@ Client Management,Reviews,collect_reviews,Enable partners to collect reviews fro
 Client Management,Reviews,enable_reviews_auto_publishing,Controls access to the Auto-Campaign preset for reviews
 Client Management,Documents \ Storage,documents_enabled,Enable use of documents module
 Client Management,Documents \ Storage,pkg.documents.promote,Displays the Documents menu item to users without access and invites them to upgrade
-Client Management,client_portal_credit_cards,client_portal_credit_cards,
+Client Management,client_portal_credit_cards,client_portal_credit_cards,"ff will show ""my credit/debit cards"" setting in ""my account"" in Client Portal"
 Scheduling,Basic Scheduling,scheduling_features,"SMS booking confirmation, scheduling notice, auto follow up hours, meeting auto response,  charge type, reminders, client card fields no multiline. if this feature is not on there is only in test quota for online scheduling"
 Scheduling,Services,single_service_booking,Allow exposing only one service for online booking (in the client portal)
-Scheduling,Services,3_services_limitation,3 service limitation per account. A user will not be able to create more than 3 services.
+Scheduling,Services,3_services_limitation,3 service limitation per account. A user will not be able to create more than 3 services
 Scheduling,Services,unlimited_services,Unlimited online services. Without this FF the business will get only 3 services
 Scheduling,Services,remove_service_limit,Remove the current limit on max number of services in the back office
 Scheduling,Event Attendees,event_attendees_limit_increased,allow to have event with more than 5 participants
@@ -38,7 +38,7 @@ Scheduling,Custom Notification & Reminders,notifications_per_service,Edit text a
 Scheduling,Custom Fields per Service,add_custom_field_service,Include add custom field service in plan
 Scheduling,Waiting List,event_waitlist,Enable the option to activate the event waitlist feature
 Scheduling,Arrival window,arrival_window,"Adds ability to set estimated arrival time on appt, service & businesses level"
-Scheduling,Resources,pkg.sch.resources,"Resource management functionality allowing businesses to create, manage and allocate physical resources to services and appointments. Part of INIT-20."
+Scheduling,Resources,pkg.sch.resources,"Resource management functionality allowing businesses to create, manage and allocate physical resources to services and appointments"
 Scheduling,External Calendar Sync (Google and Outlook),external_calendar_sync,Include external calendar sync in plan
 Scheduling,External Calendar Sync (Google and Outlook),googlewaysync_include_in_plan,Google Calendar synchronization app is included in the plan (without this flag the user will see upgrade banner)
 Scheduling,External Calendar Sync (Google and Outlook),outlookwaysync_include_in_plan,Outlook Calendar synchronization app is included in the plan (without this flag the user will see upgrade banner)
@@ -52,7 +52,7 @@ Payments,Estimates,payments_feature_estimates,Allow estimates for an account (pa
 Payments,Estimates,estimates_monthly_unlimited,Unlimited Estimates if no quota was defined.  Make sure estimate quota was defined if this was not added to the package
 Payments,Save Cards,save_cards,Card on file (vault) - save client credit card info for future payments
 Payments,Online Payments,online_payment,"Allow clients to pay using client portal, enable Payou form"
-Payments,Recurring Payments,scheduled_payments,
+Payments,Recurring Payments,scheduled_payments,Recurring payment feature- adds a new quick action for recurring payments. Allowing the business to create recurring payment plans/ currently (jan24) available for vcita payments & stripe gateways
 Payments,Templates (Invoices & Estimates Branding),pdf_customization,Invoices templates customization
 Payments,Packages,booking_packages,"Track and manage package offers. Sell future visits, sessions and services in bulk (payments sub feature)"
 Payments,Coupons,coupons,Allow adding coupons
@@ -62,12 +62,12 @@ Communication,SMS Module,sms_enabled,The FF will disable all system entry points
 Communication,SMS Module,sms_deduct_all_chargeables,"deduct all chargeable sms from sms quota (campaigns, reminders, confirmation etc). relevant only for manual directories"
 Communication,SMS Module,purchase_sms_credits,Allows directories to use quota (only campaign sms will be taken off the quota)
 Communication,SMS reminders (for Bookings and Payments),sms_client_reminders,Allow turning on client reminders
-Communication,SMS Campaigns,hide_sms_channel_from_marketing,"This option hides SMS channels from the marketing module, both from auto-campaigns and announcements."
+Communication,SMS Campaigns,hide_sms_channel_from_marketing,"This option hides SMS channels from the marketing module, both from auto-campaigns and announcements"
 Communication,Thryv,tatango,Enable integration with Tatango for SMS campaigns and Opt-in by keyword (US only)
 Communication,Thryv,dedicated_promotional_number,Feature will assign a dedicated nexmo number for promotional campaigns
 Communication,Thryv,bye_zipwip,migrate zipwip to twilio
 Communication,Thryv,disable_messages_notifications,"disable sending and setting ""messages"" notifications"
-Communication,Mute,mute,
+Communication,Mute,mute,Mutes the account from sending and receiving emails (both emails to business and clients)
 Marketing,Marketing Module,marketing_module,"To enable the restriction, it's required to *remove* marketing_module feature flag from the relevant plan"
 Marketing,Marketing Module,pkg.marketing.promote,Displays the Marketing menu item to users without access and invites them to upgrade
 Marketing,Campaign Recipients,campaign_recipients_monthly_unlimited,Unlimited Campaign recipient if no monthly quota was defined. Make sure Campaign recipient quota was defined if this was not added to the package
@@ -75,7 +75,7 @@ Marketing,Email Campaigns,blasts,"Open Announcment options, with out blast the u
 Marketing,Automated Campaigns,activate_automatic_campaigns,"Allow business to activate an automatic campaign, without it there is no automatic campaign to the business but it will be displayed in UI for upsell"
 Marketing,Automated Campaigns,create_delete_automatic_campaigns,Allow business to create or delete Automatic campaign
 Marketing,Thryv - Pro Campaigns (as an addon),pro_campaigns,Pro campaigns app
-Marketing,Thryv - Pro Campaigns (as an addon),send_pro_campaigns,
+Marketing,Thryv - Pro Campaigns (as an addon),send_pro_campaigns,Send pro campaigns
 Marketing,Thryv - Pro Campaigns (as an addon),ace_add_on,Enable ACE as Add-on
 Business Administration,Multi Staff,multistaff_features,Allow adding staff
 Business Administration,Multi Staff,joint_availability,Client can see availability for all staff (Allow checking the joint availaibility checkbox)
@@ -84,19 +84,21 @@ Business Administration,Multi Staff,auto_reassign,Auto assign client to his staf
 Business Administration,App Market,app_market_available,vcita App Market (available on the menu)
 Business Administration,Reports,reports,Enabling Reports on the menu
 Business Administration,Reports,detailed_reports,Ability to open the actual reports
-Business Administration,Quick actions,pkg.business_administration.quick_actions,"Shows the quick actions widget, the main menu quick actions button, and other quick actions buttons in conversation, inbox, and other places."
+Business Administration,Quick actions,pkg.business_administration.quick_actions,"Shows the quick actions widget, the main menu quick actions button, and other quick actions buttons in conversation, inbox, and other places"
 Business Administration,Integrations card,pkg.business_administration.integrations,Allow the business to access the integrations category from the settings page
 Business Administration,Business management upsell,pkg.bizmanagement.promote,"Reveals UI elements, as client card tabs with an upsell banner, prompting an upgrade to the Business Management package"
-Business Administration,Onboarding wizard,pkg.business_administration.registration_wizard.deny,Do not add the registration wizard for a business at account creation.
-Business Administration,Onboarding wizard,pkg.business_administration.slim_registration_wizard,"When the FF is applied to a package, only business info and profession steps are available in the registration wizard."
-Business Administration,Getting Started wizard,pkg.business_administration.getting_started.deny,"Hides the ""getting started"" wizard from the main and profile menus."
+Business Administration,Onboarding wizard,pkg.business_administration.registration_wizard.deny,Do not add the registration wizard for a business at account creation
+Business Administration,Onboarding wizard,pkg.business_administration.slim_registration_wizard,"When the FF is applied to a package, only business info and profession steps are available in the registration wizard"
+Business Administration,Getting Started wizard,pkg.business_administration.getting_started.deny,"Hides the ""getting started"" wizard from the main and profile menus"
 Business Administration,Getting Started wizard,setup_wizard_menu_item,Setup wizard menu item in pov menu
 Business Administration,Pendo,pkg.bus.pendo.deny,Pendo is a 3rd party tool that helps users on-board and learn about new features
 Business Administration,Static Page,static_page,"Shows a single page experience for user, according to the url on directory settings"
 Business Administration,vcita - Hide Powered By vcita,no_powered_by,"Ability to remove vcita ""powered by"" links. Relevant only to vcita users"
 Business Administration,vcita - Backoffice Branding,backoffice_branding,Allow back-office branding (Frontage)
+Business Administration,Thryv - Websites,websites_enabled,Presents 'websites' button under online presence (For Thryv only)
+Business Administration,Thryv - External New Staff URL,external_new_staff_url,Enables external new staff url configuration per directory (used by Thryv)
 Trial \ Spam prevention,Block Phone Numbers in Messages,block_phone_numbers_in_messages,Block phone numbers in messages
-Trial \ Spam prevention,Limit CRM Bulk Actions,pkg.crm.limit_bulk_actions,"Limits trial users from bulk actions. When enabled, only single-client selection is allowed, and bulk communication options (send message, share document, invite to pay) are disabled."
+Trial \ Spam prevention,Limit CRM Bulk Actions,pkg.crm.limit_bulk_actions,"Limits trial users from bulk actions. When enabled, only single-client selection is allowed, and bulk communication options (send message, share document, invite to pay) are disabled"
 Trial \ Spam prevention,Limit Document Sharing,limit_document_sharing,Flag to limit sharing documents
 Trial \ Spam prevention,Block Links in Messages,allow_to_send_link,Enable embeding of links in messages without 30 day wait or payment limitation
 Other,Basic Business Features,basic_business_features,"Privilege to turn on reminder in cliche, email signature in vCita, Allow business to mark message as read/unread"
@@ -105,7 +107,6 @@ Other,Ultimate Features,ultimate_features,"Email template editing in cliche, Set
 Other,No Promotional Links,no_promotional_links,Remove vCita promotional links (automatically removed in WLs)
 Other,Business Hours,business_hours,Allow modification of the business hours
 Other,Free Features,free_features,"Privilege to turn on reminder in cliche, email signature in vCita, Allow business to mark message as read/unread"
-Other,Thryv - websites_enabled,websites_enabled,Presents 'websites' button under online presence. Used to hide website in partners like DUDA that have a competitive solution to website.
 Other,Thryv - command_center,command_center,"Thryv only - for command center usage (hides inbox, hides SMS settings etc)"
 Other,Thryv - Soci,soci,Add social content platform (For Thryv only)
 Other,Thryv - Yext Reviews,yext_reviews,View Yext reviews (For Thryv only)
@@ -114,7 +115,7 @@ Other,Thryv - Yext Reviews,reviews_respond,Allow to responding to review directl
 Other,Thryv - Yext Reviews,review_publishing,Allow publishing review using Yext in the live site (For Thryv only)
 Other,Thryv - ThryvPay,thryv_pay,Gives (any) user access to ThryvPay and Scheduled Payments under Sales (if payments enabled)
 Other,Thryv - ThryvPay,ThryvPay_wizards,Thryv pay for 'Core wizard' and 'Payments wizard'
-Other,Thryv - Referral widget,pkg.thryv.referral_widget,
-Other,FCR - Yext,yextApp_include_in_plan,
-Other,FCR - Mono web builder,monowebbuilder_include_in_plan,
+Other,Thryv - Referral widget,pkg.thryv.referral_widget,Enable Thryv referral widget button at the top bar
+Other,FCR - Yext,yextApp_include_in_plan,Yext App (non Thryv accounts)
+Other,FCR - Mono web builder,monowebbuilder_include_in_plan,Mono web builder (FCR's appliction)
 Other,vcita - basic_white_label,basic_white_label,"Used in Admin form , set the account to manual type if the flag exists and it is white label or direcroty admin"

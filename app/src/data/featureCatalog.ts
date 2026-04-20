@@ -10,7 +10,6 @@ const DOMAIN_META: Record<string, { icon: string; color: string; description: st
   business_administration: { icon: 'mdi-briefcase-outline', color: '#607D8B', description: 'Business administration features' },
   client_management: { icon: 'mdi-account-group-outline', color: '#009688', description: 'Client management features' },
   bundles: { icon: 'mdi-package-variant-closed', color: '#795548', description: 'Bundles and integrations' },
-  license: { icon: 'mdi-license', color: '#673AB7', description: 'License-related flags' },
   other: { icon: 'mdi-dots-horizontal-circle-outline', color: '#9E9E9E', description: 'Other feature flags' },
   trial_spam_prevention: { icon: 'mdi-shield-alert-outline', color: '#F44336', description: 'Trial and spam prevention features' },
 }

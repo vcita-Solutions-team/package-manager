@@ -32,7 +32,7 @@
           <v-col cols="12" md="5">
             <v-text-field
               v-model="packageStore.searchQuery"
-              placeholder="Search packages by display name or name"
+              placeholder="Search by name, display name, or feature flag"
               prepend-inner-icon="mdi-magnify"
               variant="outlined"
               density="compact"
@@ -328,7 +328,7 @@ function onClone(pkg: Package) {
 
 onMounted(async () => {
   try {
-    await packageStore.loadPackages(true)
+    await packageStore.ensureLoaded()
   } catch (err: any) {
     loadError.value = err?.response?.data?.message || err?.message || 'Failed to load packages'
   }

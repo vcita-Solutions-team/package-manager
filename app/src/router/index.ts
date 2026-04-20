@@ -83,9 +83,8 @@ const router = createRouter({
 router.beforeEach((to) => {
   if (to.meta.public) return true
 
-  // Auth guard disabled for prototype — all pages accessible without login
-  // const token = localStorage.getItem('operator_jwt_token')
-  // if (!token) return { name: 'login' }
+  const token = localStorage.getItem('operator_jwt_token')
+  if (!token) return { name: 'login' }
 
   return true
 })
